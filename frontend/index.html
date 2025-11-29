@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Complaint & Resolution Hub</title>
+    <link rel="stylesheet" href="styles_clean.css">
+</head>
+<body>
+    <!-- App Container -->
+    <div id="app">
+        <!-- Login Page -->
+        <div id="login-page" class="page active">
+            <div class="login-container">
+                <div class="login-card">
+                    <h1>Student Complaint Hub</h1>
+                    <p class="subtitle">Offline Resolution System</p>
+                    
+                    <form id="login-form">
+                        <div class="form-group">
+                            <label for="username">Username</label>
+                            <input type="text" id="username" name="username" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" name="password" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Login</button>
+                    </form>
+                    
+                    <div class="login-footer">
+                        <a href="#" id="register-link">Register New Account</a>
+                    </div>
+                    
+                    <div class="demo-credentials">
+                        <p><strong>Demo Credentials:</strong></p>
+                        <p>Admin: admin / admin123</p>
+                        <p>Student: john_student / student123</p>
+                        <p>Staff: sarah_staff / staff123</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Application -->
+        <div id="main-app" class="page">
+            <!-- Sidebar -->
+            <aside id="sidebar" class="sidebar">
+                <div class="sidebar-header">
+                    <h2>Complaint Hub</h2>
+                </div>
+                <nav class="sidebar-nav">
+                    <a href="#dashboard" class="nav-item active" data-page="dashboard">
+                        <span class="icon">📊</span>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#complaints" class="nav-item" data-page="complaints">
+                        <span class="icon">📝</span>
+                        <span>Complaints</span>
+                    </a>
+                    <a href="#my-complaints" class="nav-item" data-page="my-complaints">
+                        <span class="icon">📋</span>
+                        <span>My Complaints</span>
+                    </a>
+                    <a href="#admin" class="nav-item admin-only" data-page="admin" style="display:none;">
+                        <span class="icon">⚙️</span>
+                        <span>Admin</span>
+                    </a>
+                </nav>
+                <div class="sidebar-footer">
+                    <div class="user-info">
+                        <span id="user-name">User</span>
+                        <button id="logout-btn" class="btn-text">Logout</button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main id="main-content" class="main-content">
+                <!-- Top Bar -->
+                <header class="top-bar">
+                    <div class="search-box">
+                        <input type="text" id="global-search" placeholder="Search complaints...">
+                    </div>
+                    <div class="top-bar-actions">
+                        <button class="btn-icon notification-bell" id="notification-btn" title="Notifications">
+                            <span style="font-size: 22px;">🔔</span>
+                            <span class="notification-badge" id="notification-count" style="display:none;">0</span>
+                        </button>
+                        <button id="new-complaint-btn" class="btn btn-primary">
+                            ➕ New Complaint
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Content Area -->
+                <div id="content-area" class="content-area">
+                    <!-- Dynamic content loaded here -->
+                </div>
+            </main>
+        </div>
+
+        <!-- New Complaint Modal -->
+        <div id="complaint-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Submit New Complaint</h2>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <form id="complaint-form">
+                    <div class="form-group">
+                        <label for="complaint-title">Title *</label>
+                        <input type="text" id="complaint-title" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="complaint-category">Category *</label>
+                            <select id="complaint-category" required>
+                                <option value="">Select Category</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="complaint-location">Location</label>
+                            <select id="complaint-location">
+                                <option value="">Select Location</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="complaint-priority">Priority *</label>
+                            <select id="complaint-priority" required>
+                                <option value="Low">Low</option>
+                                <option value="Medium" selected>Medium</option>
+                                <option value="High">High</option>
+                                <option value="Urgent">Urgent</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="complaint-privacy">Privacy Mode *</label>
+                            <select id="complaint-privacy" required>
+                                <option value="public">🌍 Public - Everyone can see</option>
+                                <option value="staff_only">🔒 Staff Only - Only staff can view</option>
+                                <option value="private">🔐 Private - Only you and assigned staff</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="complaint-anonymous">
+                            🎭 Submit Anonymously
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="complaint-description">Description *</label>
+                        <textarea id="complaint-description" rows="6" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="complaint-attachments">Attachments (Images, Videos, Documents)</label>
+                        <input type="file" id="complaint-attachments" multiple accept="image/*,video/*,.pdf,.doc,.docx" style="display:none;">
+                        <div class="upload-area" id="upload-area">
+                            <div class="upload-icon">📎</div>
+                            <div class="upload-text">
+                                <strong>Click to upload</strong> or drag and drop<br>
+                                <small>Images, Videos, PDFs, Documents (Max 10MB each)</small>
+                            </div>
+                        </div>
+                        <div class="upload-preview" id="upload-preview"></div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary modal-close">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Submit Complaint</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Detail Modal -->
+        <div id="detail-modal" class="modal">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h2 id="detail-title">Complaint Details</h2>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div id="detail-content" class="detail-content">
+                    <!-- Dynamic content -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app_modern.js"></script>
+</body>
+</html>
