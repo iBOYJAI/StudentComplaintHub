@@ -159,6 +159,8 @@ class CommentResponse(CommentBase):
     author_name: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+    liked: bool = False
+    like_count: int = 0
     
     class Config:
         from_attributes = True

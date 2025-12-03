@@ -4,11 +4,13 @@ from sqlalchemy import or_, and_, func
 from typing import List, Optional
 from datetime import datetime, timedelta
 from ..database import get_db
-from ..models import Complaint, User, Category, Location, TimelineEvent, Attachment, SLARule, ComplaintVote
+from ..models import Complaint, User, Category, Location, TimelineEvent, Attachment, SLARule, ComplaintVote, Comment
+from ..models.extended_models import ComplaintLike, CommentLike, Poll, PollOption, PollVote as PollVoteModel
 from ..schemas import (
     ComplaintCreate, ComplaintUpdate, ComplaintResponse, 
     PaginatedResponse, ComplaintFilter, TimelineEventResponse,
-    AttachmentResponse, VoteStats, VoteResponse
+    AttachmentResponse, VoteStats, VoteResponse,
+    CommentCreate, CommentResponse
 )
 from ..utils.auth import get_current_user, is_admin, is_staff
 from ..utils.audit import log_action
@@ -295,14 +297,18 @@ async def delete_complaint(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Soft delete complaint"""
-    
-    if not is_admin(current_user):
-        raise HTTPException(status_code=403, detail="Admin access required")
+    """Soft delete complaint - owners can delete their own, admins can delete any"""
     
     complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
     if not complaint:
         raise HTTPException(status_code=404, detail="Complaint not found")
+    
+    # Check permissions: owner or admin
+    is_owner = complaint.created_by == current_user.id
+    is_admin_user = is_admin(current_user)
+    
+    if not (is_owner or is_admin_user):
+        raise HTTPException(status_code=403, detail="Access denied")
     
     complaint.is_deleted = True
     complaint.deleted_at = datetime.utcnow()
@@ -534,3 +540,216 @@ async def get_complaint_votes(
         user_voted=user_voted,
         recent_voters=recent_voters
     )
+
+# Like/Unlike endpoints
+@router.post("/{complaint_id}/like")
+async def toggle_like(
+    complaint_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Toggle like on a complaint"""
+    
+    complaint = db.query(Complaint).filter(
+        Complaint.id == complaint_id,
+        Complaint.is_deleted == False
+    ).first()
+    
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    
+    # Check if already liked
+    existing_like = db.query(ComplaintLike).filter(
+        ComplaintLike.complaint_id == complaint_id,
+        ComplaintLike.user_id == current_user.id
+    ).first()
+    
+    if existing_like:
+        # Unlike
+        db.delete(existing_like)
+        liked = False
+    else:
+        # Like
+        like = ComplaintLike(
+            complaint_id=complaint_id,
+            user_id=current_user.id
+        )
+        db.add(like)
+        liked = True
+    
+    db.commit()
+    
+    # Get like count
+    like_count = db.query(ComplaintLike).filter(
+        ComplaintLike.complaint_id == complaint_id
+    ).count()
+    
+    return {
+        "liked": liked,
+        "like_count": like_count
+    }
+
+# Comment endpoints
+@router.get("/{complaint_id}/comments", response_model=List[CommentResponse])
+async def get_comments(
+    complaint_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all comments for a complaint"""
+    
+    complaint = db.query(Complaint).filter(
+        Complaint.id == complaint_id,
+        Complaint.is_deleted == False
+    ).first()
+    
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    
+    # Get comments (excluding internal ones unless staff)
+    query = db.query(Comment).filter(
+        Comment.complaint_id == complaint_id,
+        Comment.is_deleted == False
+    )
+    
+    if not is_staff(current_user):
+        query = query.filter(Comment.is_internal == False)
+    
+    comments = query.order_by(Comment.created_at.asc()).all()
+    
+    result = []
+    for comment in comments:
+        # Check if user liked this comment
+        user_liked = db.query(CommentLike).filter(
+            CommentLike.comment_id == comment.id,
+            CommentLike.user_id == current_user.id
+        ).first() is not None
+        
+        # Get like count
+        like_count = db.query(CommentLike).filter(
+            CommentLike.comment_id == comment.id
+        ).count()
+        
+        # Get author info (respecting anonymity)
+        author = db.query(User).filter(User.id == comment.author_id).first()
+        author_name = author.full_name if author else "Unknown"
+        
+        response = CommentResponse.from_orm(comment)
+        response.author_name = author_name
+        response.liked = user_liked
+        response.like_count = like_count
+        result.append(response)
+    
+    return result
+
+@router.post("/{complaint_id}/comments", response_model=CommentResponse, status_code=status.HTTP_201_CREATED)
+async def add_comment(
+    complaint_id: int,
+    comment_data: CommentCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Add a comment to a complaint"""
+    
+    complaint = db.query(Complaint).filter(
+        Complaint.id == complaint_id,
+        Complaint.is_deleted == False
+    ).first()
+    
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    
+    # Create comment
+    comment = Comment(
+        complaint_id=complaint_id,
+        author_id=current_user.id,
+        content=comment_data.content,
+        is_internal=comment_data.is_internal if is_staff(current_user) else False,
+        parent_id=comment_data.parent_id
+    )
+    
+    db.add(comment)
+    db.commit()
+    db.refresh(comment)
+    
+    # Create timeline event
+    create_timeline_event(
+        db, complaint_id, "commented",
+        f"{current_user.full_name} commented on this complaint",
+        current_user.id
+    )
+    
+    log_action(db, current_user.id, "COMMENT_CREATED", "Comment", comment.id)
+    
+    # Build response
+    response = CommentResponse.from_orm(comment)
+    response.author_name = current_user.full_name
+    response.liked = False
+    response.like_count = 0
+    
+    return response
+
+# Poll endpoint (also available in /api/polls)
+@router.post("/{complaint_id}/poll")
+async def create_complaint_poll(
+    complaint_id: int,
+    poll_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a poll for a complaint (staff/admin only)"""
+    
+    if not (is_staff(current_user) or is_admin(current_user)):
+        raise HTTPException(status_code=403, detail="Staff or admin access required")
+    
+    complaint = db.query(Complaint).filter(
+        Complaint.id == complaint_id,
+        Complaint.is_deleted == False
+    ).first()
+    
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    
+    # Check if poll already exists
+    existing_poll = db.query(Poll).filter(Poll.complaint_id == complaint_id).first()
+    if existing_poll:
+        raise HTTPException(status_code=400, detail="Poll already exists for this complaint")
+    
+    # Create poll
+    expires_at = None
+    if poll_data.get("expires_at"):
+        try:
+            expires_at = datetime.fromisoformat(poll_data["expires_at"].replace('Z', '+00:00'))
+        except:
+            pass
+    
+    poll = Poll(
+        complaint_id=complaint_id,
+        question=poll_data.get("question", "What should be the priority of this complaint?"),
+        expires_at=expires_at
+    )
+    db.add(poll)
+    db.flush()
+    
+    # Create poll options
+    options_list = poll_data.get("options", ["Low", "Medium", "High", "Urgent"])
+    for idx, option_text in enumerate(options_list):
+        option = PollOption(
+            poll_id=poll.id,
+            option_text=option_text,
+            order=idx
+        )
+        db.add(option)
+    
+    db.commit()
+    db.refresh(poll)
+    
+    log_action(db, current_user.id, "POLL_CREATED", "Poll", poll.id)
+    
+    return {
+        "id": poll.id,
+        "complaint_id": poll.complaint_id,
+        "question": poll.question,
+        "is_active": poll.is_active,
+        "message": "Poll created successfully"
+    }

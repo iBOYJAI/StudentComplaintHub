@@ -8,7 +8,9 @@ from app.routes import (
     complaints_router,
     users_router,
     dashboard_router,
-    admin_router
+    admin_router,
+    comments_router,
+    polls_router
 )
 
 # Create FastAPI app
@@ -29,18 +31,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
+# Include routers (API routes must be registered first)
 app.include_router(auth_router)
 app.include_router(complaints_router)
 app.include_router(users_router)
 app.include_router(dashboard_router)
 app.include_router(admin_router)
+app.include_router(comments_router)
+app.include_router(polls_router)
 
-# Serve static files (frontend)
+# Serve static files (frontend) - mounted last so API routes take precedence
 try:
-    app.mount("/static", StaticFiles(directory=str(settings.BASE_DIR / "frontend" / "build")), name="static")
-except:
-    pass  # Frontend may not be built yet
+    frontend_dir = settings.BASE_DIR.parent / "frontend"
+    if frontend_dir.exists():
+        # Mount static files, but exclude /api routes
+        app.mount("/", StaticFiles(directory=str(frontend_dir), html=True), name="frontend")
+except Exception as e:
+    print(f"Note: Frontend static files not mounted: {e}")
 
 @app.on_event("startup")
 async def startup_event():
@@ -48,8 +55,38 @@ async def startup_event():
     print(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
     print(f"Server: http://{settings.HOST}:{settings.PORT}")
     print(f"API Docs: http://{settings.HOST}:{settings.PORT}/api/docs")
-    init_db()
-    print("Database initialized")
+    print()
+    
+    # Auto-detect and configure database
+    try:
+        from auto_detect_db import auto_configure_database, auto_initialize_database
+        
+        print("Auto-configuring database...")
+        mysql_configured = auto_configure_database()
+        
+        if mysql_configured or not settings.USE_MYSQL:
+            print()
+            try:
+                auto_initialize_database()
+            except Exception as e:
+                print(f"Warning: Auto-initialization failed: {e}")
+                print("Initializing basic tables...")
+                init_db()
+                print("Database tables created")
+        else:
+            # Fallback to SQLite initialization
+            init_db()
+            print("Database initialized (SQLite)")
+    except ImportError:
+        # auto_detect_db not available, use basic init
+        print("Auto-detection not available, using basic initialization...")
+        init_db()
+        print("Database initialized")
+    except Exception as e:
+        print(f"Warning: Auto-configuration failed: {e}")
+        print("Falling back to basic initialization...")
+        init_db()
+        print("Database initialized")
 
 @app.get("/")
 async def root():

@@ -23,6 +23,26 @@ class Settings(BaseSettings):
     USE_MYSQL: bool = True
     
     # MySQL Configuration (only used if USE_MYSQL=True)
+    # 
+    # For Standard MySQL Installation:
+    # MYSQL_HOST: str = "localhost"
+    # MYSQL_PORT: int = 3306
+    # MYSQL_USER: str = "complaint_admin"
+    # MYSQL_PASSWORD: str = "ComplaintDB@2024"
+    # MYSQL_DATABASE: str = "student_complaints"
+    #
+    # For XAMPP MySQL (Default - root with no password):
+    # MYSQL_HOST: str = "localhost"
+    # MYSQL_PORT: int = 3306
+    # MYSQL_USER: str = "root"
+    # MYSQL_PASSWORD: str = ""  # Empty password for XAMPP default
+    # MYSQL_DATABASE: str = "student_complaints"
+    #
+    # For XAMPP MySQL (root with password):
+    # MYSQL_USER: str = "root"
+    # MYSQL_PASSWORD: str = "your_xampp_root_password"
+    #
+    # See docs/XAMPP_SETUP.md for complete XAMPP setup instructions
     MYSQL_HOST: str = "localhost"
     MYSQL_PORT: int = 3306
     MYSQL_USER: str = "complaint_admin"

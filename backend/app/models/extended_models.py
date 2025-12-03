@@ -191,7 +191,7 @@ class UserActivity(Base):
     activity_type = Column(String(50), nullable=False, index=True)  # login, logout, post, like, share, etc.
     entity_type = Column(String(50), nullable=True)  # complaint, comment, story
     entity_id = Column(Integer, nullable=True)
-    metadata = Column(JSON, nullable=True)
+    activity_metadata = Column(JSON, nullable=True)  # Renamed from 'metadata' (reserved by SQLAlchemy)
     ip_address = Column(String(50), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     
@@ -290,3 +290,65 @@ class Bookmark(Base):
     # Relationships
     user = relationship("User", backref="bookmarks")
     complaint = relationship("Complaint", backref="bookmarks")
+
+# ==================== POLLS ====================
+
+class Poll(Base):
+    """Polls attached to complaints for voting on priority"""
+    __tablename__ = "polls"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    complaint_id = Column(Integer, ForeignKey("complaints.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    question = Column(String(500), nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    expires_at = Column(DateTime, nullable=True)
+    
+    # Relationships
+    complaint = relationship("Complaint", backref="poll", uselist=False)
+    options = relationship("PollOption", back_populates="poll", cascade="all, delete-orphan")
+    votes = relationship("PollVote", back_populates="poll", cascade="all, delete-orphan")
+
+class PollOption(Base):
+    """Poll options (Low, Medium, High, Urgent)"""
+    __tablename__ = "poll_options"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    poll_id = Column(Integer, ForeignKey("polls.id", ondelete="CASCADE"), nullable=False, index=True)
+    option_text = Column(String(100), nullable=False)  # "Low", "Medium", "High", "Urgent"
+    vote_count = Column(Integer, default=0)
+    order = Column(Integer, default=0)
+    
+    # Relationships
+    poll = relationship("Poll", back_populates="options")
+    votes = relationship("PollVote", back_populates="option", cascade="all, delete-orphan")
+
+class PollVote(Base):
+    """User votes on poll options"""
+    __tablename__ = "poll_votes"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    poll_id = Column(Integer, ForeignKey("polls.id", ondelete="CASCADE"), nullable=False, index=True)
+    option_id = Column(Integer, ForeignKey("poll_options.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    voted_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    poll = relationship("Poll", back_populates="votes")
+    option = relationship("PollOption", back_populates="votes")
+    user = relationship("User", backref="poll_votes")
+
+# ==================== COMMENT LIKES ====================
+
+class CommentLike(Base):
+    """Likes on comments"""
+    __tablename__ = "comment_likes"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    comment_id = Column(Integer, ForeignKey("comments.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    liked_at = Column(DateTime, default=datetime.utcnow, index=True)
+    
+    # Relationships
+    comment = relationship("Comment", backref="likes")
+    user = relationship("User", backref="comment_likes")

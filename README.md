@@ -18,12 +18,14 @@ A comprehensive, self-contained complaint management system designed for educati
 - ✅ **Secure Authentication** - Local password hashing (bcrypt) with JWT sessions and optional PIN unlock
 
 ### Technical Features
-- 🔒 **100% Offline** - No internet connection required
-- 💾 **SQLite Database** - Encrypted local database with all data
-- 🎨 **Modern UI** - Clean, responsive interface with Material Design principles
+- 🔒 **100% Offline** - No internet connection required, no external dependencies
+- 💾 **Auto Database Detection** - Automatically finds and configures MySQL/XAMPP
+- 🎨 **Modern UI** - Clean, professional design with updated color scheme
+- 🔔 **System Notifications** - Desktop and web app notifications
 - 🔐 **Security** - Password hashing, session management, audit logging
 - 📱 **Responsive** - Works on desktop and tablet screens
 - ⚡ **Fast** - Optimized for instant loading and smooth performance
+- 🚀 **Auto-Initialize** - Database automatically sets up on first run
 
 ## 📋 System Requirements
 
@@ -33,7 +35,27 @@ A comprehensive, self-contained complaint management system designed for educati
 - **Disk Space**: 500MB minimum
 - **Browser**: Modern browser (Chrome, Firefox, Edge, Safari)
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Offline Mode)
+
+### Option 1: Auto-Start (Recommended)
+**Windows:**
+```batch
+start_offline.bat
+```
+
+**Linux/Mac:**
+```bash
+chmod +x start_offline.sh
+./start_offline.sh
+```
+
+This automatically:
+- ✅ Detects MySQL/XAMPP
+- ✅ Configures database
+- ✅ Initializes database
+- ✅ Starts the server
+
+### Option 2: Manual Start
 
 ### 1. Install Python Dependencies
 
@@ -45,12 +67,32 @@ cd backend
 pip install -r requirements.txt
 ```
 
-### 2. Initialize Database
+### 2. Choose Database Option
 
+#### Option A: SQLite (Default - No Setup Required)
 ```bash
 # Run database initialization script
 python init_db.py
 ```
+
+#### Option B: MySQL with XAMPP (Recommended for Development)
+1. Install XAMPP from https://www.apachefriends.org/
+2. Start MySQL in XAMPP Control Panel
+3. Create database `student_complaints` in phpMyAdmin (http://localhost/phpmyadmin)
+4. Update `backend/app/config.py`:
+   ```python
+   USE_MYSQL: bool = True
+   MYSQL_USER: str = "root"
+   MYSQL_PASSWORD: str = ""  # Empty for XAMPP default
+   ```
+5. Run: `python init_db_mysql.py`
+6. See `docs/XAMPP_SETUP.md` for complete XAMPP setup guide
+
+#### Option C: Standard MySQL Installation
+1. Install MySQL from https://dev.mysql.com/downloads/
+2. Create database and user (see `docs/MYSQL_SETUP.md`)
+3. Update `backend/app/config.py` with MySQL credentials
+4. Run: `python init_db_mysql.py`
 
 This creates the database, default roles, categories, locations, and demo users.
 
@@ -152,10 +194,38 @@ StudentComplaintHub/
 Edit `backend/app/config.py` to customize:
 
 - Server host and port
-- Database location
+- Database type (SQLite or MySQL)
+- MySQL connection settings (for XAMPP or standard MySQL)
 - File upload limits
 - SLA default times
 - Security settings
+
+### Database Configuration Examples
+
+**SQLite (Default):**
+```python
+USE_MYSQL: bool = False
+```
+
+**XAMPP MySQL:**
+```python
+USE_MYSQL: bool = True
+MYSQL_HOST: str = "localhost"
+MYSQL_PORT: int = 3306
+MYSQL_USER: str = "root"
+MYSQL_PASSWORD: str = ""  # Empty for XAMPP default
+MYSQL_DATABASE: str = "student_complaints"
+```
+
+**Standard MySQL:**
+```python
+USE_MYSQL: bool = True
+MYSQL_HOST: str = "localhost"
+MYSQL_PORT: int = 3306
+MYSQL_USER: str = "complaint_admin"
+MYSQL_PASSWORD: str = "ComplaintDB@2024"
+MYSQL_DATABASE: str = "student_complaints"
+```
 
 ## 🛠️ Development
 
@@ -250,12 +320,44 @@ Simply copy the entire `StudentComplaintHub` folder to a USB drive or network sh
 - Verify user is approved (admin must approve new registrations)
 - Reset password through admin panel
 
+## 📚 Documentation
+
+### Complete Project Documentation
+
+- **[PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md)** - Complete project documentation including:
+  - Abstract & Overview
+  - Problem Statement & Solution
+  - Complete Features List
+  - Database Schema & Tables
+  - System Architecture
+  - Workflow Diagrams
+  - API Endpoints
+  - Role-Based Permissions
+  - Technology Stack
+
+### Additional Documentation
+
+- **[PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)** - Project structure and organization
+- **[IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md)** - Feature implementation status
+- **[CLEANUP_SUMMARY.md](CLEANUP_SUMMARY.md)** - Project cleanup summary
+- **[docs/DIAGRAMS.md](docs/DIAGRAMS.md)** - Visual system diagrams
+
+### Setup Guides
+
+- `docs/QUICKSTART.md` - Quick start guide
+- `docs/XAMPP_SETUP.md` - XAMPP MySQL setup guide
+- `docs/MYSQL_SETUP.md` - Standard MySQL setup guide
+- `docs/MYSQL_PRODUCTION_SETUP.md` - Production MySQL deployment
+- `docs/OFFLINE_SETUP.md` - Offline mode setup guide
+- `docs/ADMIN_MANUAL.md` - System administration guide
+
 ## 📞 Support
 
 For issues or questions:
 1. Check logs in `logs/` directory
 2. Review API documentation at `/api/docs`
-3. Consult admin manual in `docs/` folder
+3. Consult documentation in `docs/` folder
+4. Review complete project documentation in `PROJECT_DOCUMENTATION.md`
 
 ## 📄 License
 
@@ -276,3 +378,5 @@ Future enhancements (optional):
 
 **Built with FastAPI, SQLAlchemy, and vanilla JavaScript**  
 **Version 1.0.0 | December 2024**
+
+
