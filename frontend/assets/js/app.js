@@ -11,6 +11,12 @@ class App {
     }
     
     async init() {
+        // Hide loading screen as soon as possible (if present)
+        const loadingEl = document.getElementById('loading');
+        if (loadingEl) {
+            loadingEl.style.display = 'none';
+        }
+
         // Check authentication
         const token = localStorage.getItem('token');
         if (token) {
@@ -22,11 +28,8 @@ class App {
             }
         }
         
-        // Initialize router
+        // Initialize router (may replace #app contents)
         this.router.init();
-        
-        // Hide loading
-        document.getElementById('loading').style.display = 'none';
     }
 }
 

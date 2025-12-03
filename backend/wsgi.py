@@ -1,6 +1,13 @@
+from pathlib import Path
+
+from dotenv import load_dotenv
 from app import create_app
 from app.extensions import db
 from app.models import *
+
+# Load environment variables from .env file in the backend directory if present
+BASE_DIR = Path(__file__).resolve().parent
+load_dotenv(BASE_DIR / '.env')
 
 app = create_app('development')
 

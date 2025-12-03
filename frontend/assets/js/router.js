@@ -25,9 +25,17 @@ export class Router {
         this.addRoute('/', () => this.loadPage('home'));
         this.addRoute('/login', () => this.loadPage('login'));
         this.addRoute('/complaints', () => this.loadPage('complaints'));
-        
+        this.addRoute('/404', () => this.loadPage('Page not found'));
+
+        // Normalize initial path (treat "/index.html" as "/")
+        let path = window.location.pathname;
+        if (path === '/index.html') {
+            path = '/';
+            window.history.replaceState({}, '', '/');
+        }
+
         // Handle initial load
-        this.handleRoute(window.location.pathname);
+        this.handleRoute(path);
         
         // Handle back/forward
         window.addEventListener('popstate', () => {

@@ -1,8 +1,7 @@
 from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import func
-from ..extensions import db
-from ..models import Complaint, User
+from ..models import Complaint, User, Category
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
