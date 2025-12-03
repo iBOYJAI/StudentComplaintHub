@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..extensions import db
-from ..models import Complaint, Category, Location, User, Comment, ComplaintLike, SLARule
+from ..models import Complaint, Category, Location, User, Comment, ComplaintLike, SLARule, ComplaintVote, Escalation
 from ..utils.decorators import staff_required
 
 complaints_bp = Blueprint('complaints', __name__)
@@ -195,7 +195,7 @@ def get_comments(id):
     complaint = Complaint.query.filter_by(id=id, is_deleted=False).first()
     if not complaint:
         return jsonify({'error': 'Complaint not found'}), 404
-
+    
     comments = Comment.query.filter_by(complaint_id=id, is_deleted=False).order_by(Comment.created_at).all()
     return jsonify([c.to_dict() for c in comments]), 200
 
@@ -205,11 +205,11 @@ def get_comments(id):
 def add_comment(id):
     user_id = get_jwt_identity()
     data = request.get_json()
-
+    
     complaint = Complaint.query.filter_by(id=id, is_deleted=False).first()
     if not complaint:
         return jsonify({'error': 'Complaint not found'}), 404
-
+    
     comment = Comment(
         complaint_id=id,
         author_id=user_id,
@@ -218,5 +218,91 @@ def add_comment(id):
     )
     db.session.add(comment)
     db.session.commit()
-
+    
     return jsonify(comment.to_dict()), 201
+
+
+@complaints_bp.route('/<int:id>/vote', methods=['POST'])
+@jwt_required()
+def toggle_vote(id):
+    """Vote/unvote a complaint"""
+    user_id = get_jwt_identity()
+    
+    complaint = Complaint.query.filter_by(id=id, is_deleted=False).first()
+    if not complaint:
+        return jsonify({'error': 'Complaint not found'}), 404
+    
+    vote = ComplaintVote.query.filter_by(complaint_id=id, user_id=user_id).first()
+    
+    if vote:
+        db.session.delete(vote)
+        voted = False
+        complaint.vote_count = max(0, complaint.vote_count - 1)
+    else:
+        vote = ComplaintVote(complaint_id=id, user_id=user_id)
+        db.session.add(vote)
+        voted = True
+        complaint.vote_count += 1
+    
+    db.session.commit()
+    
+    return jsonify({
+        'voted': voted, 
+        'vote_count': complaint.vote_count
+    }), 200
+
+
+@complaints_bp.route('/<int:id>/escalate', methods=['POST'])
+@jwt_required()
+def escalate_complaint(id):
+    """Escalate a complaint to higher authority"""
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    data = request.get_json()
+    
+    complaint = Complaint.query.filter_by(id=id, is_deleted=False).first()
+    if not complaint:
+        return jsonify({'error': 'Complaint not found'}), 404
+    
+    # Check permissions - only staff or complaint owner can escalate
+    if not (user.is_staff() or complaint.created_by == user_id):
+        return jsonify({'error': 'Access denied'}), 403
+    
+    escalation = Escalation(
+        complaint_id=id,
+        escalated_by=user_id,
+        escalated_to=data.get('escalated_to'),
+        reason=data['reason'],
+        escalation_level=data.get('level', 1)
+    )
+    
+    # Mark complaint as escalated
+    complaint.is_escalated = True
+    complaint.escalated_at = datetime.utcnow()
+    
+    db.session.add(escalation)
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Complaint escalated successfully',
+        'escalation': escalation.to_dict()
+    }), 201
+
+
+@complaints_bp.route('/<int:id>/escalations', methods=['GET'])
+@jwt_required()
+def get_escalations(id):
+    """Get all escalations for a complaint"""
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    
+    complaint = Complaint.query.filter_by(id=id, is_deleted=False).first()
+    if not complaint:
+        return jsonify({'error': 'Complaint not found'}), 404
+    
+    # Check permissions
+    if not (user.is_staff() or complaint.created_by == user_id):
+        return jsonify({'error': 'Access denied'}), 403
+    
+    escalations = Escalation.query.filter_by(complaint_id=id).order_by(Escalation.created_at.desc()).all()
+    return jsonify([e.to_dict() for e in escalations]), 200

@@ -8,4 +8,8 @@ def validate_password(password):
     return len(password) >= 6
 
 def validate_username(username):
-    return len(username) >= 3 and username.isalnum()
+    # Allow alphanumeric characters and underscores, minimum 3 characters
+    if not username or len(username) < 3:
+        return False
+    # Check if username contains only alphanumeric characters and underscores
+    return all(c.isalnum() or c == '_' for c in username)
