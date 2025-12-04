@@ -44,13 +44,13 @@ export class NotificationsPage extends BasePage {
     return `
       <div class="timeline">
         ${this.notifications.map(notif => `
-          <div class="timeline-item ${notif.read ? '' : 'unread'}" data-notif-id="${notif.id}">
-            <div class="timeline-content" style="${notif.read ? '' : 'background-color: var(--color-primary-lightest);'}">
-              <div class="timeline-time">${this.formatDateTime(notif.createdAt)}</div>
+          <div class="timeline-item ${notif.is_read ? '' : 'unread'}" data-notif-id="${notif.id}">
+            <div class="timeline-content" style="${notif.is_read ? '' : 'background-color: var(--color-primary-lightest);'}">
+              <div class="timeline-time">${this.formatDateTime(notif.created_at)}</div>
               <h4 class="mb-2 font-semibold">${this.getNotificationIcon(notif.type)} ${this.escapeHtml(notif.title)}</h4>
               <p class="mb-2">${this.escapeHtml(notif.message)}</p>
-              ${notif.actionUrl ? `<a href="${notif.actionUrl}" class="btn btn-sm btn-primary" data-link>View</a>` : ''}
-              ${!notif.read ? `<button class="btn btn-sm btn-ghost mt-2" data-action="mark-read" data-id="${notif.id}">Mark as Read</button>` : ''}
+              ${notif.related_id && notif.related_type === 'complaint' ? `<a href="/student/complaints/${notif.related_id}" class="btn btn-sm btn-primary" data-link>View Complaint</a>` : ''}
+              ${!notif.is_read ? `<button class="btn btn-sm btn-ghost mt-2" data-action="mark-read" data-id="${notif.id}">Mark as Read</button>` : ''}
             </div>
           </div>
         `).join('')}
@@ -61,7 +61,7 @@ export class NotificationsPage extends BasePage {
   async loadData() {
     try {
       const response = await this.api.getNotifications();
-      this.notifications = response.data || response.notifications || [];
+      this.notifications = response.notifications || response.data || [];
     } catch (error) {
       console.error('Error loading notifications:', error);
       Toast.error('Failed to load notifications');
@@ -94,7 +94,7 @@ export class NotificationsPage extends BasePage {
   async markAllAsRead() {
     try {
       // Mark all unread notifications
-      const unreadIds = this.notifications.filter(n => !n.read).map(n => n.id);
+      const unreadIds = this.notifications.filter(n => !n.is_read).map(n => n.id);
       await Promise.all(unreadIds.map(id => this.api.markNotificationRead(id)));
       Toast.success('All notifications marked as read');
       await this.render();

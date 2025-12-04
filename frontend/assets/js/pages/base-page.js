@@ -48,4 +48,11 @@ export class BasePage {
   showLoading() {
     return '<div class="loading-inline"><div class="spinner-sm"></div></div>';
   }
+
+  escapeHtml(text) {
+    if (text == null) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
 }

@@ -92,8 +92,8 @@ def login():
     user.last_login = datetime.utcnow()
     db.session.commit()
     
-    # Create access token
-    access_token = create_access_token(identity=user.id)
+    # Create access token - identity must be a string
+    access_token = create_access_token(identity=str(user.id))
     
     return jsonify({
         'access_token': access_token,
@@ -106,13 +106,21 @@ def login():
 @jwt_required()
 def get_current_user():
     """Get current user information"""
-    user_id = get_jwt_identity()
-    user = User.query.options(db.joinedload(User.roles)).get(user_id)
-    
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
-    
-    return jsonify(user.to_dict()), 200
+    try:
+        user_id = get_jwt_identity()
+        if not user_id:
+            return jsonify({'error': 'Invalid token: no user ID'}), 422
+        
+        # Convert user_id to int if it's a string (from JWT)
+        user_id = int(user_id) if isinstance(user_id, str) else user_id
+        user = User.query.options(joinedload(User.roles)).get(user_id)
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        return jsonify(user.to_dict()), 200
+    except Exception as e:
+        return jsonify({'error': 'Token validation failed', 'message': str(e)}), 422
 
 
 @auth_bp.route('/pin/setup', methods=['POST'])
@@ -120,7 +128,11 @@ def get_current_user():
 def setup_pin():
     """Setup or update PIN for quick login"""
     user_id = get_jwt_identity()
-    user = User.query.options(db.joinedload(User.roles)).get(user_id)
+    user = User.query.options(joinedload(User.roles)).get(user_id)
+    
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
     data = request.get_json()
     
     pin = data.get('pin', '')
@@ -160,8 +172,8 @@ def pin_login():
     user.last_login = datetime.utcnow()
     db.session.commit()
     
-    # Create access token
-    access_token = create_access_token(identity=user.id)
+    # Create access token - identity must be a string
+    access_token = create_access_token(identity=str(user.id))
     
     return jsonify({
         'access_token': access_token,

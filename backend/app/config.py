@@ -28,6 +28,7 @@ class Config:
     JWT_TOKEN_LOCATION = ['headers']
     JWT_HEADER_NAME = 'Authorization'
     JWT_HEADER_TYPE = 'Bearer'
+    JWT_ALGORITHM = 'HS256'
     
     # CORS
     CORS_ORIGINS = ['*']

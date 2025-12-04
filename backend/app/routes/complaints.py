@@ -2,16 +2,18 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..extensions import db
-from ..models import Complaint, Category, Location, User, Comment, ComplaintLike, SLARule, ComplaintVote, Escalation
+from ..models import Complaint, Category, Location, User, Comment, ComplaintLike, SLARule, ComplaintVote, Escalation, Notification
 from ..utils.decorators import staff_required
 
 complaints_bp = Blueprint('complaints', __name__)
 
 
-@complaints_bp.route('/', methods=['GET'])
+@complaints_bp.route('', methods=['GET'], strict_slashes=False)
+@complaints_bp.route('/', methods=['GET'], strict_slashes=False)
 @jwt_required()
 def list_complaints():
     user_id = get_jwt_identity()
+    user_id = int(user_id) if isinstance(user_id, str) else user_id  # FIX: Convert to int
     user = User.query.get(user_id)
 
     page = request.args.get('page', 1, type=int)
@@ -49,10 +51,12 @@ def list_complaints():
     }), 200
 
 
-@complaints_bp.route('/', methods=['POST'])
+@complaints_bp.route('', methods=['POST'], strict_slashes=False)
+@complaints_bp.route('/', methods=['POST'], strict_slashes=False)
 @jwt_required()
 def create_complaint():
     user_id = get_jwt_identity()
+    user_id = int(user_id) if isinstance(user_id, str) else user_id  # FIX: Convert to int
     data = request.get_json()
 
     # Validate category
@@ -84,6 +88,25 @@ def create_complaint():
     db.session.add(complaint)
     db.session.commit()
 
+    # Create notification for all users about new complaint
+    try:
+        all_users = User.query.filter_by(is_active=True).all()
+        for user in all_users:
+            notification = Notification(
+                user_id=user.id,
+                type='new_complaint',
+                title='New Complaint Created',
+                message=f'A new complaint "{data["title"]}" has been created.',
+                related_id=complaint.id,
+                related_type='complaint'
+            )
+            db.session.add(notification)
+        db.session.commit()
+    except Exception as e:
+        print(f"Error creating notifications: {e}")
+        # Don't fail the complaint creation if notifications fail
+        db.session.rollback()
+
     return jsonify(complaint.to_dict()), 201
 
 
@@ -91,6 +114,7 @@ def create_complaint():
 @jwt_required()
 def get_complaint(id):
     user_id = get_jwt_identity()
+    user_id = int(user_id) if isinstance(user_id, str) else user_id  # FIX: Convert to int
     user = User.query.get(user_id)
 
     complaint = Complaint.query.filter_by(id=id, is_deleted=False).first()
@@ -105,13 +129,56 @@ def get_complaint(id):
     complaint.view_count += 1
     db.session.commit()
 
-    return jsonify(complaint.to_dict()), 200
+    # Get full complaint data with comments, votes, etc.
+    complaint_data = complaint.to_dict()
+    
+    # Get all comments (including replies)
+    try:
+        comments = Comment.query.filter_by(complaint_id=id, is_deleted=False).order_by(Comment.created_at).all()
+        complaint_data['comments'] = [c.to_dict() for c in comments]
+    except Exception as e:
+        print(f"Error loading comments: {e}")
+        import traceback
+        traceback.print_exc()
+        complaint_data['comments'] = []
+    
+    # Get all votes with user info
+    try:
+        votes = ComplaintVote.query.filter_by(complaint_id=id).all()
+        
+        # Get user info for voters
+        voters = []
+        for vote in votes:
+            voter_user = User.query.get(vote.user_id)
+            if voter_user:
+                voters.append({'id': voter_user.id, 'username': voter_user.username, 'full_name': voter_user.full_name})
+            else:
+                voters.append({'id': vote.user_id, 'username': 'Unknown', 'full_name': 'Unknown'})
+        
+        complaint_data['votes'] = {
+            'count': complaint.vote_count,
+            'voters': voters
+        }
+        
+        # Check if current user has voted
+        user_vote = ComplaintVote.query.filter_by(complaint_id=id, user_id=user_id).first()
+        complaint_data['user_has_voted'] = user_vote is not None
+    except Exception as e:
+        print(f"Error loading votes: {e}")
+        complaint_data['votes'] = {
+            'count': complaint.vote_count or 0,
+            'voters': []
+        }
+        complaint_data['user_has_voted'] = False
+    
+    return jsonify(complaint_data), 200
 
 
 @complaints_bp.route('/<int:id>', methods=['PUT'])
 @jwt_required()
 def update_complaint(id):
     user_id = get_jwt_identity()
+    user_id = int(user_id) if isinstance(user_id, str) else user_id  # FIX: Convert to int
     user = User.query.get(user_id)
     data = request.get_json()
 
@@ -147,6 +214,7 @@ def update_complaint(id):
 @jwt_required()
 def delete_complaint(id):
     user_id = get_jwt_identity()
+    user_id = int(user_id) if isinstance(user_id, str) else user_id  # FIX: Convert to int
     user = User.query.get(user_id)
 
     complaint = Complaint.query.get(id)
@@ -168,6 +236,7 @@ def delete_complaint(id):
 @jwt_required()
 def toggle_like(id):
     user_id = get_jwt_identity()
+    user_id = int(user_id) if isinstance(user_id, str) else user_id  # FIX: Convert to int
 
     complaint = Complaint.query.filter_by(id=id, is_deleted=False).first()
     if not complaint:
@@ -204,7 +273,11 @@ def get_comments(id):
 @jwt_required()
 def add_comment(id):
     user_id = get_jwt_identity()
-    data = request.get_json()
+    user_id = int(user_id) if isinstance(user_id, str) else user_id  # FIX: Convert to int
+    data = request.get_json() or {}
+    
+    if not data.get('content'):
+        return jsonify({'error': 'Comment content is required'}), 400
     
     complaint = Complaint.query.filter_by(id=id, is_deleted=False).first()
     if not complaint:
@@ -227,6 +300,7 @@ def add_comment(id):
 def toggle_vote(id):
     """Vote/unvote a complaint"""
     user_id = get_jwt_identity()
+    user_id = int(user_id) if isinstance(user_id, str) else user_id  # FIX: Convert to int
     
     complaint = Complaint.query.filter_by(id=id, is_deleted=False).first()
     if not complaint:
@@ -246,9 +320,28 @@ def toggle_vote(id):
     
     db.session.commit()
     
+    # Refresh complaint to get updated data
+    db.session.refresh(complaint)
+    
+    # Get all votes with user info
+    try:
+        votes = ComplaintVote.query.filter_by(complaint_id=id).all()
+        voters = []
+        for vote in votes:
+            voter_user = User.query.get(vote.user_id)
+            if voter_user:
+                voters.append({'id': voter_user.id, 'username': voter_user.username, 'full_name': voter_user.full_name})
+            else:
+                voters.append({'id': vote.user_id, 'username': 'Unknown', 'full_name': 'Unknown'})
+    except Exception as e:
+        print(f"Error loading voters: {e}")
+        voters = []
+    
     return jsonify({
         'voted': voted, 
-        'vote_count': complaint.vote_count
+        'vote_count': complaint.vote_count,
+        'complaint': complaint.to_dict(),
+        'voters': voters
     }), 200
 
 
@@ -257,8 +350,9 @@ def toggle_vote(id):
 def escalate_complaint(id):
     """Escalate a complaint to higher authority"""
     user_id = get_jwt_identity()
+    user_id = int(user_id) if isinstance(user_id, str) else user_id  # FIX: Convert to int
     user = User.query.get(user_id)
-    data = request.get_json()
+    data = request.get_json() or {}
     
     complaint = Complaint.query.filter_by(id=id, is_deleted=False).first()
     if not complaint:
@@ -268,11 +362,14 @@ def escalate_complaint(id):
     if not (user.is_staff() or complaint.created_by == user_id):
         return jsonify({'error': 'Access denied'}), 403
     
+    if not data.get('reason'):
+        return jsonify({'error': 'Escalation reason is required'}), 400
+    
     escalation = Escalation(
         complaint_id=id,
         escalated_by=user_id,
         escalated_to=data.get('escalated_to'),
-        reason=data['reason'],
+        reason=data.get('reason', 'No reason provided'),
         escalation_level=data.get('level', 1)
     )
     
@@ -294,6 +391,7 @@ def escalate_complaint(id):
 def get_escalations(id):
     """Get all escalations for a complaint"""
     user_id = get_jwt_identity()
+    user_id = int(user_id) if isinstance(user_id, str) else user_id  # FIX: Convert to int
     user = User.query.get(user_id)
     
     complaint = Complaint.query.filter_by(id=id, is_deleted=False).first()

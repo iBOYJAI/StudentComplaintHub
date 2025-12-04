@@ -4,14 +4,44 @@ export class Sidebar {
   }
 
   render(user) {
-    if (!user) return '';
+    if (!user) {
+      console.warn('Sidebar.render: No user provided');
+      return '';
+    }
     
-    const menuItems = this.getMenuItems(user.role);
+    // Get role from user.role, Auth helper, or extract from roles array
+    let role = user.role;
+    
+    if (!role && window.Auth && window.Auth.getUserRole) {
+      role = window.Auth.getUserRole();
+    }
+    
+    // Fallback: extract role directly from roles array
+    if (!role && user.roles && user.roles.length > 0) {
+      const roleName = user.roles[0];
+      if (roleName === 'Super Admin' || roleName === 'Principal' || roleName === 'Vice Principal') {
+        role = 'admin';
+      } else if (roleName === 'Staff' || roleName === 'Department Head') {
+        role = 'staff';
+      } else if (roleName === 'Student') {
+        role = 'student';
+      }
+    }
+    
+    if (!role) {
+      console.warn('Sidebar.render: Could not determine role for user:', user);
+      return '';
+    }
+    
+    const menuItems = this.getMenuItems(role);
 
     return `
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-          <h3 class="text-lg font-semibold">${this.getRoleTitle(user.role)}</h3>
+          <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">
+            <span class="sidebar-toggle-icon">☰</span>
+          </button>
+          <h3 class="text-lg font-semibold">${this.getRoleTitle(role)}</h3>
         </div>
         <nav class="sidebar-menu">
           ${menuItems.map(item => `
@@ -51,6 +81,7 @@ export class Sidebar {
       ],
       admin: [
         { path: '/admin/dashboard', label: 'Dashboard', icon: '📊', active: currentPath === '/admin/dashboard' },
+        { path: '/admin/complaints', label: 'Complaints', icon: '📋', active: currentPath === '/admin/complaints' || currentPath.startsWith('/admin/complaints/') },
         { path: '/admin/users', label: 'Users', icon: '👥', active: currentPath === '/admin/users' },
         { path: '/admin/roles', label: 'Roles', icon: '🔐', active: currentPath === '/admin/roles' },
         { path: '/admin/categories', label: 'Categories', icon: '📁', active: currentPath === '/admin/categories' },
@@ -69,8 +100,33 @@ export class Sidebar {
   toggle() {
     this.isOpen = !this.isOpen;
     const sidebar = document.getElementById('sidebar');
+    const app = document.getElementById('app');
+    const navbar = document.querySelector('.navbar');
+    
     if (sidebar) {
-      sidebar.classList.toggle('open');
+      // On mobile, use 'open' class for slide in/out
+      if (window.innerWidth <= 1024) {
+        sidebar.classList.toggle('open');
+      } else {
+        // On desktop, use 'collapsed' class for collapse/expand
+        sidebar.classList.toggle('collapsed');
+        if (app) {
+          app.classList.toggle('sidebar-collapsed');
+        }
+        if (navbar) {
+          navbar.classList.toggle('sidebar-collapsed');
+        }
+      }
+    }
+  }
+
+  attachEvents() {
+    // Attach toggle button event
+    const toggleBtn = document.getElementById('sidebar-toggle');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        this.toggle();
+      });
     }
   }
 }

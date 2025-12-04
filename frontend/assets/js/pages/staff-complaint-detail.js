@@ -47,7 +47,7 @@ export class StaffComplaintDetailPage extends BasePage {
           </div>
           <div class="complaint-detail-meta-item">
             <span class="complaint-detail-meta-label">Category</span>
-            <span class="complaint-detail-meta-value">${this.complaint.category || 'N/A'}</span>
+            <span class="complaint-detail-meta-value">${this.complaint.category_name || 'N/A'}</span>
           </div>
           <div class="complaint-detail-meta-item">
             <span class="complaint-detail-meta-label">Priority</span>
@@ -57,15 +57,15 @@ export class StaffComplaintDetailPage extends BasePage {
           </div>
           <div class="complaint-detail-meta-item">
             <span class="complaint-detail-meta-label">Location</span>
-            <span class="complaint-detail-meta-value">${this.complaint.location || 'N/A'}</span>
+            <span class="complaint-detail-meta-value">${this.complaint.location_name || 'N/A'}</span>
           </div>
           <div class="complaint-detail-meta-item">
             <span class="complaint-detail-meta-label">Submitted By</span>
-            <span class="complaint-detail-meta-value">${this.complaint.submittedBy || 'N/A'}</span>
+            <span class="complaint-detail-meta-value">${this.complaint.creator?.full_name || this.complaint.creator?.username || (this.complaint.is_anonymous ? 'Anonymous' : 'N/A')}</span>
           </div>
           <div class="complaint-detail-meta-item">
             <span class="complaint-detail-meta-label">Created</span>
-            <span class="complaint-detail-meta-value">${this.formatDate(this.complaint.createdAt)}</span>
+            <span class="complaint-detail-meta-value">${this.formatDate(this.complaint.created_at)}</span>
           </div>
         </div>
       </div>
@@ -90,7 +90,7 @@ export class StaffComplaintDetailPage extends BasePage {
       <div class="complaint-actions-card">
         <h3 class="card-title">Actions</h3>
         
-        ${this.complaint.status !== 'resolved' && this.complaint.status !== 'closed' ? `
+        ${this.complaint.status && this.complaint.status.toLowerCase() !== 'resolved' && this.complaint.status.toLowerCase() !== 'closed' ? `
           <button class="btn btn-primary complaint-action-btn" id="updateStatusBtn">
             Update Status
           </button>
@@ -99,7 +99,7 @@ export class StaffComplaintDetailPage extends BasePage {
           </button>
         ` : ''}
         
-        ${this.complaint.status !== 'escalated' ? `
+        ${this.complaint.status && this.complaint.status.toLowerCase() !== 'escalated' ? `
           <button class="btn btn-warning complaint-action-btn" id="escalateBtn">
             Escalate Complaint
           </button>
@@ -122,10 +122,10 @@ export class StaffComplaintDetailPage extends BasePage {
             ${this.comments.map(comment => `
               <div class="comment-item">
                 <div class="comment-header">
-                  <span class="comment-author">${comment.author || 'Unknown'}</span>
-                  <span class="comment-time">${this.formatDate(comment.createdAt)}</span>
+                  <span class="comment-author">${this.escapeHtml(comment.author_name || 'Unknown')}</span>
+                  <span class="comment-time">${this.formatDate(comment.created_at)}</span>
                 </div>
-                <div class="comment-body">${this.escapeHtml(comment.content)}</div>
+                <div class="comment-body">${this.escapeHtml(comment.content || '')}</div>
               </div>
             `).join('')}
           </div>
@@ -143,8 +143,13 @@ export class StaffComplaintDetailPage extends BasePage {
   async loadData() {
     try {
       const response = await this.api.getComplaint(this.complaintId);
-      this.complaint = response.data || response.complaint || response;
+      // Backend returns the complaint directly, not wrapped in data/complaint
+      this.complaint = response;
       this.comments = this.complaint.comments || [];
+      
+      // Debug: log the complaint data to see what we're getting
+      console.log('Complaint data:', this.complaint);
+      console.log('Comments:', this.comments);
     } catch (error) {
       console.error('Error loading complaint:', error);
       Toast.error('Failed to load complaint details');
@@ -198,7 +203,7 @@ export class StaffComplaintDetailPage extends BasePage {
       await this.render();
     } catch (error) {
       console.error('Error updating status:', error);
-      Toast.error('Failed to update status');
+      Toast.error(error.message || 'Failed to update status');
     }
   }
 
@@ -208,29 +213,35 @@ export class StaffComplaintDetailPage extends BasePage {
       'Are you sure you want to mark this complaint as resolved?',
       async () => {
         try {
-          await this.api.updateComplaint(this.complaintId, { status: 'resolved' });
+          await this.api.updateComplaint(this.complaintId, { status: 'Resolved' });
           Toast.success('Complaint marked as resolved');
           await this.render();
         } catch (error) {
           console.error('Error resolving complaint:', error);
-          Toast.error('Failed to resolve complaint');
+          Toast.error(error.message || 'Failed to resolve complaint');
         }
       }
     );
   }
 
   async escalateComplaint() {
+    const reason = prompt('Please provide a reason for escalation:');
+    if (!reason || !reason.trim()) {
+      Toast.error('Escalation reason is required');
+      return;
+    }
+    
     Modal.confirm(
       'Escalate Complaint',
-      'Are you sure you want to escalate this complaint?',
+      `Are you sure you want to escalate this complaint?\n\nReason: ${reason}`,
       async () => {
         try {
-          await this.api.escalateComplaint(this.complaintId);
+          await this.api.escalateComplaint(this.complaintId, reason.trim());
           Toast.success('Complaint escalated successfully');
           await this.render();
         } catch (error) {
           console.error('Error escalating complaint:', error);
-          Toast.error('Failed to escalate complaint');
+          Toast.error(error.message || 'Failed to escalate complaint');
         }
       }
     );
@@ -244,25 +255,29 @@ export class StaffComplaintDetailPage extends BasePage {
     }
 
     try {
-      await this.api.addComment(this.complaintId, commentText.value);
+      await this.api.addComment(this.complaintId, commentText.value.trim());
       Toast.success('Comment added successfully');
       commentText.value = '';
       await this.render();
     } catch (error) {
       console.error('Error adding comment:', error);
-      Toast.error('Failed to add comment');
+      Toast.error(error.message || 'Failed to add comment');
     }
   }
 
   getStatusBadgeColor(status) {
+    if (!status) return 'gray';
+    const statusLower = status.toLowerCase();
     const colors = {
+      'new': 'primary',
       'open': 'warning',
+      'in progress': 'info',
       'in_progress': 'info',
       'resolved': 'success',
       'closed': 'gray',
       'escalated': 'error'
     };
-    return colors[status] || 'gray';
+    return colors[statusLower] || 'gray';
   }
 
   getPriorityBadgeColor(priority) {

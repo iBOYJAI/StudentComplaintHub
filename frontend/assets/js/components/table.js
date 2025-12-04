@@ -1,7 +1,9 @@
 export class Table {
   constructor(options = {}) {
     this.columns = options.columns || [];
-    this.data = options.data || [];
+    // Ensure data is always an array
+    const data = options.data || [];
+    this.data = Array.isArray(data) ? data : (data.items || data.data || []);
     this.actions = options.actions || [];
     this.onRowClick = options.onRowClick || null;
     this.striped = options.striped || false;
@@ -66,30 +68,47 @@ export class Table {
   }
 
   attachEvents(container) {
+    // Check if container exists
+    if (!container) {
+      console.warn('Table.attachEvents: Container is null or undefined');
+      return;
+    }
+
     // Row click events
     if (this.onRowClick) {
-      container.querySelectorAll('tr[data-row-index]').forEach(tr => {
-        tr.addEventListener('click', (e) => {
-          if (!e.target.closest('button')) {
-            const index = parseInt(tr.dataset.rowIndex);
-            this.onRowClick(this.data[index], index);
+      const rows = container.querySelectorAll('tr[data-row-index]');
+      if (rows) {
+        rows.forEach(tr => {
+          tr.addEventListener('click', (e) => {
+            if (!e.target.closest('button')) {
+              const index = parseInt(tr.dataset.rowIndex);
+              if (!isNaN(index) && this.data[index]) {
+                this.onRowClick(this.data[index], index);
+              }
+            }
+          });
+        });
+      }
+    }
+
+    // Action button events
+    const actionButtons = container.querySelectorAll('button[data-action]');
+    if (actionButtons) {
+      actionButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const actionName = btn.dataset.action;
+          const rowIndex = parseInt(btn.dataset.rowIndex);
+          
+          if (!isNaN(rowIndex) && this.data[rowIndex]) {
+            const action = this.actions.find(a => a.name === actionName);
+            
+            if (action && action.onClick) {
+              action.onClick(this.data[rowIndex], rowIndex);
+            }
           }
         });
       });
     }
-
-    // Action button events
-    container.querySelectorAll('button[data-action]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const actionName = btn.dataset.action;
-        const rowIndex = parseInt(btn.dataset.rowIndex);
-        const action = this.actions.find(a => a.name === actionName);
-        
-        if (action && action.onClick) {
-          action.onClick(this.data[rowIndex], rowIndex);
-        }
-      });
-    });
   }
 }

@@ -92,16 +92,16 @@ export class StaffDashboardPage extends BasePage {
         <h2 class="dashboard-section-title">Recent Assigned Complaints</h2>
         <div class="recent-complaints-list">
           ${this.recentComplaints.map(complaint => `
-            <div class="complaint-card-mini" data-complaint-id="${complaint.id}">
+            <a href="/staff/complaints/${complaint.id}" class="complaint-card-mini" data-link data-complaint-id="${complaint.id}">
               <div class="complaint-card-mini-content">
                 <h3 class="complaint-card-mini-title">${this.escapeHtml(complaint.title)}</h3>
                 <div class="complaint-card-mini-meta">
                   <span class="badge badge-${this.getStatusBadgeColor(complaint.status)}">${complaint.status}</span>
-                  <span>${complaint.category}</span>
-                  <span>📅 ${this.formatDate(complaint.createdAt)}</span>
+                  <span>${complaint.category_name || 'N/A'}</span>
+                  <span>📅 ${this.formatDate(complaint.created_at)}</span>
                 </div>
               </div>
-            </div>
+            </a>
           `).join('')}
         </div>
       </div>
@@ -111,10 +111,10 @@ export class StaffDashboardPage extends BasePage {
   async loadData() {
     try {
       const statsResponse = await this.api.getDashboardStats();
-      this.stats = statsResponse.data || statsResponse;
+      this.stats = statsResponse;
 
-      const complaintsResponse = await this.api.getComplaints({ assigned: true, limit: 5 });
-      this.recentComplaints = complaintsResponse.data || complaintsResponse.complaints || [];
+      const complaintsResponse = await this.api.getComplaints({ assigned: true, per_page: 5 });
+      this.recentComplaints = complaintsResponse.items || complaintsResponse.data || complaintsResponse.complaints || [];
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       Toast.error('Failed to load dashboard data');
@@ -124,14 +124,7 @@ export class StaffDashboardPage extends BasePage {
   }
 
   async afterRender() {
-    // Add click handlers for complaint cards
-    const complaintCards = document.querySelectorAll('.complaint-card-mini');
-    complaintCards.forEach(card => {
-      card.addEventListener('click', () => {
-        const complaintId = card.dataset.complaintId;
-        this.router.navigate(`/staff/complaints/${complaintId}`);
-      });
-    });
+    // Cards are now links with data-link, so router will handle them automatically
   }
 
   getStatusBadgeColor(status) {

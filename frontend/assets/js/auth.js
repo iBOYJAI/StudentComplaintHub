@@ -8,7 +8,13 @@ export class Auth {
   }
 
   static setToken(token) {
-    localStorage.setItem('token', token);
+    // Trim token to remove any whitespace
+    const cleanToken = token ? token.trim() : '';
+    if (cleanToken) {
+      localStorage.setItem('token', cleanToken);
+    } else {
+      localStorage.removeItem('token');
+    }
   }
 
   static removeToken() {

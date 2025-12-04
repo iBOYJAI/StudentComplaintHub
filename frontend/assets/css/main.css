@@ -407,6 +407,16 @@ input, textarea, select {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  transition: padding-left var(--transition-base);
+}
+
+/* When sidebar is present, add left padding to app */
+#app.with-sidebar {
+  padding-left: var(--sidebar-width);
+}
+
+#app.with-sidebar.sidebar-collapsed {
+  padding-left: 60px;
 }
 
 .app-layout {
@@ -423,6 +433,9 @@ input, textarea, select {
   padding: var(--spacing-6);
   margin-top: var(--navbar-height);
   background-color: var(--color-background);
+  width: 100%;
+  min-width: 0; /* Prevent overflow */
+  transition: margin-left var(--transition-base);
 }
 
 /* Auth Layout (centered) */
@@ -514,6 +527,10 @@ input, textarea, select {
 }
 
 @media (max-width: 1024px) {
+  #app.with-sidebar {
+    padding-left: 0;
+  }
+  
   .app-layout.with-sidebar {
     padding-left: 0;
   }

@@ -54,7 +54,7 @@ def detect_mysql():
             continue
     
     # Fallback to SQLite
-    print("⚠ MySQL not detected, using SQLite")
+    print("MySQL not detected, using SQLite")
     db_path = Path(__file__).resolve().parent.parent.parent.parent / 'database' / 'complaints.db'
     db_path.parent.mkdir(exist_ok=True)
     return f"sqlite:///{db_path}"

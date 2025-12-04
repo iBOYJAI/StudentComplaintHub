@@ -130,3 +130,29 @@ class RoutingRule(db.Model):
             'is_active': self.is_active,
             'execution_order': self.execution_order
         }
+
+
+class Notification(db.Model):
+    __tablename__ = 'notifications'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    type = db.Column(db.String(50), nullable=False)  # 'new_complaint', 'comment', 'status_change', etc.
+    title = db.Column(db.String(255), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    related_id = db.Column(db.Integer)  # ID of related resource (complaint, comment, etc.)
+    related_type = db.Column(db.String(50))  # 'complaint', 'comment', etc.
+    is_read = db.Column(db.Boolean, default=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'type': self.type,
+            'title': self.title,
+            'message': self.message,
+            'related_id': self.related_id,
+            'related_type': self.related_type,
+            'is_read': self.is_read,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }

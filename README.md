@@ -1,382 +1,277 @@
 # Student Complaint & Resolution Hub
 
-**Version 1.0.0** - Fully Offline Desktop Application
+**Version 1.1.0** — Updated for 2025!  
+*A robust, fully offline desktop system for managing complaints in educational institutions.*
 
-A comprehensive, self-contained complaint management system designed for educational institutions. Works 100% offline without requiring internet access.
+Centralizes complaint submissions, tracking, and resolution—now with streamlined setup and flexible database support for easy deployment.
 
-## 🌟 Features
+---
+
+## 🌟 Features (2025 Edition)
 
 ### Core Functionality
-- ✅ **Complaint Submission** - Students can submit complaints with categories, locations, priority levels, and anonymity options
-- ✅ **Automated Routing** - Admin-configurable rules to automatically assign complaints to staff
-- ✅ **Workflow Management** - Complete lifecycle from New → Acknowledged → In Progress → Resolved → Closed
-- ✅ **SLA Tracking** - Automatic SLA timers and overdue flagging based on priority
-- ✅ **Timeline & Audit Trail** - Immutable history of all complaint activities
-- ✅ **Role-Based Access** - Student, Staff, Department Head, Vice Principal, Principal, Super Admin
-- ✅ **Dashboard & Analytics** - Real-time statistics and KPI cards
-- ✅ **Search & Filters** - Full-text search with advanced filtering
-- ✅ **Secure Authentication** - Local password hashing (bcrypt) with JWT sessions and optional PIN unlock
+- 📝 **Complaint Submission** — File complaints by category, location, priority; option for anonymity
+- 🤖 **Smart Routing** — Rules auto-assign complaints to the right staff
+- 🔄 **Workflow Tracking** — Status flows: New → Acknowledged → In Progress → Resolved → Closed
+- 🕓 **SLA Monitoring** — SLA timers and overdue escalations
+- 🧾 **Full Timeline & Audit** — Every action logged, audit-proof
+- 🧑‍🤝‍🧑 **Role-Based Access** — Student, Staff, Principal, Admin—granular controls
+- 📊 **Dashboards** — Instant metrics, KPIs
+- 🔍 **Search & Filters** — Filter by category, status, user, date, text
+- 🔑 **Multi-factor Login** — Password or PIN (offline PIN supported)
+- 🛡️ **Security Enhancements** — Strong password & session management
 
-### Technical Features
-- 🔒 **100% Offline** - No internet connection required, no external dependencies
-- 💾 **Auto Database Detection** - Automatically finds and configures MySQL/XAMPP
-- 🎨 **Modern UI** - Clean, professional design with updated color scheme
-- 🔔 **System Notifications** - Desktop and web app notifications
-- 🔐 **Security** - Password hashing, session management, audit logging
-- 📱 **Responsive** - Works on desktop and tablet screens
-- ⚡ **Fast** - Optimized for instant loading and smooth performance
-- 🚀 **Auto-Initialize** - Database automatically sets up on first run
+### Technical Highlights
+- 📴 **Truly Offline** — 100% local, no internet dependencies
+- ⚙️ **Auto DB Detection** — SQLite by default; XAMPP-MySQL, or Standard MySQL supported
+- 💡 **One-Click Setup** — SQLite zero-config or easy XAMPP steps
+- 🛠️ **Modern UI** — Improved accessibility and look
+- 🔔 **Alerts** — In-app & tray notifications
+- 📱 **Responsive Design** — Desktop & tablet ready
+- 🚀 **Fast Start** — Minimal boot time
+- 🧩 **Easy Extensibility** — Modular backend/frontend architecture
 
-## 📋 System Requirements
+---
 
-- **Operating System**: Windows 10/11, macOS 10.14+, or Linux
-- **Python**: 3.8 or higher
-- **RAM**: 2GB minimum (4GB recommended)
-- **Disk Space**: 500MB minimum
-- **Browser**: Modern browser (Chrome, Firefox, Edge, Safari)
+## ⚙️ System Requirements
 
-## 🚀 Quick Start (Offline Mode)
+- **OS:** Windows 10/11, macOS 10.14+, Linux
+- **Python:** 3.8 or newer (tested up to 3.12+)
+- **RAM:** 2GB+ (4GB recommended)
+- **Disk:** 500MB+ free
+- **Browser:** Chrome, Edge, Firefox, Safari
 
-### Option 1: Auto-Start (Recommended)
-**Windows:**
+---
+
+## 🚦 Quick Start
+
+### 1. One-Click (Offline/Default)
+
+**Windows:**  
 ```batch
 start_offline.bat
 ```
-
-**Linux/Mac:**
+**Linux/Mac:**  
 ```bash
 chmod +x start_offline.sh
 ./start_offline.sh
 ```
-
-This automatically:
-- ✅ Detects MySQL/XAMPP
-- ✅ Configures database
-- ✅ Initializes database
-- ✅ Starts the server
-
-### Option 2: Manual Start
-
-### 1. Install Python Dependencies
-
-```bash
-# Navigate to backend directory
-cd backend
-
-# Install required packages
-pip install -r requirements.txt
-```
-
-### 2. Choose Database Option
-
-#### Option A: SQLite (Default - No Setup Required)
-```bash
-# Run database initialization script
-python init_db.py
-```
-
-#### Option B: MySQL with XAMPP (Recommended for Development)
-1. Install XAMPP from https://www.apachefriends.org/
-2. Start MySQL in XAMPP Control Panel
-3. Create database `student_complaints` in phpMyAdmin (http://localhost/phpmyadmin)
-4. Update `backend/app/config.py`:
-   ```python
-   USE_MYSQL: bool = True
-   MYSQL_USER: str = "root"
-   MYSQL_PASSWORD: str = ""  # Empty for XAMPP default
-   ```
-5. Run: `python init_db_mysql.py`
-6. See `docs/XAMPP_SETUP.md` for complete XAMPP setup guide
-
-#### Option C: Standard MySQL Installation
-1. Install MySQL from https://dev.mysql.com/downloads/
-2. Create database and user (see `docs/MYSQL_SETUP.md`)
-3. Update `backend/app/config.py` with MySQL credentials
-4. Run: `python init_db_mysql.py`
-
-This creates the database, default roles, categories, locations, and demo users.
-
-### 3. Start the Application
-
-```bash
-# Start the backend server
-python main.py
-```
-
-The application will start at: **http://127.0.0.1:8000**
-
-### 4. Access the Application
-
-Open your web browser and navigate to:
-```
-http://127.0.0.1:8000
-```
-
-Or open the frontend directly:
-```
-frontend/index.html
-```
-
-## 🔑 Default Login Credentials
-
-### Administrator
-- **Username**: `admin`
-- **Password**: `admin123`
-- **Role**: Super Admin
-
-### Student Account
-- **Username**: `john_student`
-- **Password**: `student123`
-- **Role**: Student
-
-### Staff Account
-- **Username**: `sarah_staff`
-- **Password**: `staff123`
-- **Role**: Staff
-
-⚠️ **IMPORTANT**: Change these default passwords after first login!
-
-## 📖 User Guide
-
-### For Students
-
-1. **Login** - Use your credentials to access the system
-2. **Submit Complaint** - Click "New Complaint" button
-3. **Fill Details** - Enter title, description, category, location, and priority
-4. **Track Status** - View your complaints in "My Complaints" section
-5. **View Timeline** - Click any complaint to see detailed timeline
-
-### For Staff
-
-1. **View Queue** - See all assigned complaints in "Complaints" section
-2. **Take Action** - Click complaints to view details
-3. **Update Status** - Change complaint status as you progress
-4. **Add Comments** - Communicate with students
-5. **Resolve** - Mark complaints as resolved with notes
-
-### For Administrators
-
-1. **Dashboard** - View system-wide statistics
-2. **User Management** - Approve new registrations, manage roles
-3. **Categories & Locations** - Configure complaint categories and locations
-4. **SLA Rules** - Set response and resolution times
-5. **Routing Rules** - Configure automatic complaint assignment
-
-## 🗂️ Project Structure
-
-```
-StudentComplaintHub/
-├── backend/                 # Python FastAPI backend
-│   ├── app/
-│   │   ├── models/         # Database models
-│   │   ├── routes/         # API endpoints
-│   │   ├── utils/          # Utilities (auth, files, audit)
-│   │   ├── config.py       # Configuration
-│   │   ├── database.py     # Database setup
-│   │   └── schemas.py      # Pydantic schemas
-│   ├── main.py             # Application entry point
-│   ├── init_db.py          # Database initialization
-│   └── requirements.txt    # Python dependencies
-├── frontend/                # HTML/CSS/JS frontend
-│   ├── index.html          # Main HTML
-│   ├── styles.css          # Styles
-│   └── app.js              # Application logic
-├── database/                # SQLite database storage
-├── attachments/             # File uploads storage
-├── backups/                 # Backup files
-├── logs/                    # Application logs
-└── docs/                    # Documentation
-
-```
-
-## 🔧 Configuration
-
-Edit `backend/app/config.py` to customize:
-
-- Server host and port
-- Database type (SQLite or MySQL)
-- MySQL connection settings (for XAMPP or standard MySQL)
-- File upload limits
-- SLA default times
-- Security settings
-
-### Database Configuration Examples
-
-**SQLite (Default):**
-```python
-USE_MYSQL: bool = False
-```
-
-**XAMPP MySQL:**
-```python
-USE_MYSQL: bool = True
-MYSQL_HOST: str = "localhost"
-MYSQL_PORT: int = 3306
-MYSQL_USER: str = "root"
-MYSQL_PASSWORD: str = ""  # Empty for XAMPP default
-MYSQL_DATABASE: str = "student_complaints"
-```
-
-**Standard MySQL:**
-```python
-USE_MYSQL: bool = True
-MYSQL_HOST: str = "localhost"
-MYSQL_PORT: int = 3306
-MYSQL_USER: str = "complaint_admin"
-MYSQL_PASSWORD: str = "ComplaintDB@2024"
-MYSQL_DATABASE: str = "student_complaints"
-```
-
-## 🛠️ Development
-
-### Run in Development Mode
-
-```bash
-cd backend
-python main.py
-```
-
-Server auto-reloads on code changes when `DEBUG=True`.
-
-### API Documentation
-
-Access interactive API docs at:
-- **Swagger UI**: http://127.0.0.1:8000/api/docs
-- **ReDoc**: http://127.0.0.1:8000/api/redoc
-
-### Database Management
-
-```bash
-# Reinitialize database
-python init_db.py
-
-# Manual database access
-sqlite3 database/complaints.db
-```
-
-## 📊 Database Schema
-
-### Main Tables
-- **users** - User accounts and authentication
-- **roles** - User roles and permissions
-- **complaints** - Complaint records
-- **comments** - Complaint comments
-- **attachments** - File attachments
-- **timeline_events** - Audit trail
-- **categories** - Complaint categories
-- **locations** - Location options
-- **routing_rules** - Auto-assignment rules
-- **sla_rules** - SLA time limits
-- **audit_logs** - System audit log
-
-## 🔐 Security Features
-
-- ✅ Password hashing with bcrypt
-- ✅ JWT token-based authentication
-- ✅ Role-based access control (RBAC)
-- ✅ Immutable audit trail
-- ✅ Soft delete with recovery
-- ✅ Input validation and sanitization
-- ✅ File type and size validation
-- ✅ Session timeout
-
-## 📦 Packaging & Distribution
-
-### Windows
-
-```bash
-# Install PyInstaller
-pip install pyinstaller
-
-# Create executable
-pyinstaller --onefile --add-data "frontend;frontend" --add-data "database;database" main.py
-```
-
-### Portable Version
-
-Simply copy the entire `StudentComplaintHub` folder to a USB drive or network share. Users only need Python installed.
-
-## ⚡ Performance Optimization
-
-- Database indexes on frequently queried fields
-- Pagination for large result sets
-- Lazy loading of related data
-- Client-side caching
-- Optimized SQL queries
-
-## 🐛 Troubleshooting
-
-### Application won't start
-- Verify Python 3.8+ is installed: `python --version`
-- Check all dependencies installed: `pip install -r backend/requirements.txt`
-- Ensure port 8000 is not in use
-
-### Database errors
-- Delete `database/complaints.db` and run `python init_db.py` again
-- Check file permissions on database directory
-
-### Login issues
-- Clear browser cache and localStorage
-- Verify user is approved (admin must approve new registrations)
-- Reset password through admin panel
-
-## 📚 Documentation
-
-### Complete Project Documentation
-
-- **[PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md)** - Complete project documentation including:
-  - Abstract & Overview
-  - Problem Statement & Solution
-  - Complete Features List
-  - Database Schema & Tables
-  - System Architecture
-  - Workflow Diagrams
-  - API Endpoints
-  - Role-Based Permissions
-  - Technology Stack
-
-### Additional Documentation
-
-- **[PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)** - Project structure and organization
-- **[IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md)** - Feature implementation status
-- **[CLEANUP_SUMMARY.md](CLEANUP_SUMMARY.md)** - Project cleanup summary
-- **[docs/DIAGRAMS.md](docs/DIAGRAMS.md)** - Visual system diagrams
-
-### Setup Guides
-
-- `docs/QUICKSTART.md` - Quick start guide
-- `docs/XAMPP_SETUP.md` - XAMPP MySQL setup guide
-- `docs/MYSQL_SETUP.md` - Standard MySQL setup guide
-- `docs/MYSQL_PRODUCTION_SETUP.md` - Production MySQL deployment
-- `docs/OFFLINE_SETUP.md` - Offline mode setup guide
-- `docs/ADMIN_MANUAL.md` - System administration guide
-
-## 📞 Support
-
-For issues or questions:
-1. Check logs in `logs/` directory
-2. Review API documentation at `/api/docs`
-3. Consult documentation in `docs/` folder
-4. Review complete project documentation in `PROJECT_DOCUMENTATION.md`
-
-## 📄 License
-
-This software is provided as-is for educational institutions.
-
-## 🎯 Roadmap
-
-Future enhancements (optional):
-- [ ] Email notifications (when online)
-- [ ] File attachment support in comments
-- [ ] Advanced reporting with charts
-- [ ] Mobile app version
-- [ ] Multi-language support
-- [ ] Backup encryption
-- [ ] LAN sync between multiple instances
+- Detects and configures DB (SQLite/XAMPP-MySQL)
+- Initializes DB and launches server automatically
 
 ---
 
-**Built with FastAPI, SQLAlchemy, and vanilla JavaScript**  
-**Version 1.0.0 | December 2024**
+### 2. Manual Advanced Setup
 
+#### a. Backend Requirements
 
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
+#### b. Database Choice
+
+- **A. SQLite (default)**
+  ```bash
+  python init_db.py
+  ```
+- **B. XAMPP MySQL:**
+  1. Install XAMPP: https://www.apachefriends.org/
+  2. Start MySQL in XAMPP Control Panel
+  3. Create DB `student_complaints` (phpMyAdmin)
+  4. Edit `backend/app/config.py`:
+     ```python
+     USE_MYSQL = True
+     MYSQL_USER = "root"
+     MYSQL_PASSWORD = ""  # Default
+     ```
+  5. Run: `python init_db_mysql.py`
+  6. [See guide](docs/XAMPP_SETUP.md)
+
+- **C. Standard MySQL**
+  1. Download: https://dev.mysql.com/downloads/
+  2. [See guide](docs/MYSQL_SETUP.md)
+
+> *First DB init sets up default roles, demo users, categories, and locations.*
+
+#### c. Start the Server
+
+```bash
+python main.py
+```
+
+---
+
+## 🌐 Accessing The App
+
+- Go to: [http://127.0.0.1:8000](http://127.0.0.1:8000)
+- Or: Run `frontend/server.py` to serve only static files
+
+---
+
+## 🔑 Default Login Credentials
+
+| Role         | Username    | Password        | Notes            |
+|--------------|-------------|----------------|------------------|
+| Admin        | `admin`     | `admin123`     | Super Admin      |
+| Principal    | `principal` | `principal123` | Head/Principal   |
+| Staff        | `staff1`    | `staff123`     | Any staff user   |
+| Student      | `student1`  | `student123`   | Any student user |
+
+> ⚠️ **You must change all default passwords upon first login (system enforces this).**
+
+---
+
+## 👩‍💼 How To Use
+
+### For Students
+1. Login (username/password OR PIN)
+2. Submit a complaint
+3. Monitor your complaint/timeline dashboard
+4. Message staff from dashboard when needed
+
+### For Staff
+1. Review assigned complaints
+2. Update progress
+3. Add comments or upload attachments
+4. Resolve/escalate as needed
+
+### For Admins/Principal
+1. Manage users and roles
+2. Configure complaint categories, SLAs, and routing rules
+3. View KPIs/analytics dashboard
+4. Manage logs and backups
+
+---
+
+## 📁 Project Layout
+
+```
+StudentComplaintHub/
+├── backend/           # FastAPI+SQLAlchemy backend
+│   ├── app/
+│   ├── main.py
+│   ├── init_db.py
+│   └── requirements.txt 
+├── frontend/          # UI (HTML/CSS/JS)
+├── database/          # SQLite DB files
+├── docs/              # Guides/documentation
+├── attachments/       # User uploads
+├── backups/           # Backup files
+├── logs/              # Log output
+└── ...
+```
+See [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) for full explanation.
+
+---
+
+## 🔧 Backend Config (`backend/app/config.py`)
+
+- **SQLite (default)**  
+  ```python
+  USE_MYSQL = False
+  ```
+- **XAMPP MySQL**  
+  ```python
+  USE_MYSQL = True
+  MYSQL_HOST = "localhost"
+  MYSQL_PORT = 3306
+  MYSQL_USER = "root"
+  MYSQL_PASSWORD = ""  # XAMPP default
+  MYSQL_DATABASE = "student_complaints"
+  ```
+- **Standard MySQL**  
+  ```python
+  USE_MYSQL = True
+  MYSQL_USER = "complaint_admin"
+  MYSQL_PASSWORD = "ComplaintDB@2024"
+  ```
+
+---
+
+## 🛠️ Development & Debugging
+
+- Start server manually:  
+  ```bash
+  cd backend
+  python main.py
+  ```
+- Auto reload with `DEBUG=True`
+- Swagger API docs: [http://127.0.0.1:8000/api/docs](http://127.0.0.1:8000/api/docs)
+- Reinitialize DB: `python init_db.py`
+- Open SQLite shell: `sqlite3 database/complaints.db`
+
+---
+
+## 🔒 Security Highlights
+
+- Secure (bcrypt) passwords & PINs
+- JWT session tokens, ready for offline use
+- Roles & permissions enforced everywhere
+- All actions go to immutable audit log
+- File validation & quarantine of uploads
+- Automatic session timeout
+- Soft-delete and data restore features
+
+---
+
+## 🐞 Troubleshooting
+
+- Ensure Python ≥3.8: `python --version`
+- All dependencies installed: `pip install -r backend/requirements.txt`
+- Port 8000 is open
+- Delete/re-init DB if data issues
+- Check logs in `/logs/`
+- New users must be approved by admin
+
+---
+
+## 📚 Documentation
+
+All in `/docs/`:
+
+- [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md)
+- [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)
+- [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md)
+- [CLEANUP_SUMMARY.md](CLEANUP_SUMMARY.md)
+- [docs/DIAGRAMS.md](docs/DIAGRAMS.md)
+- Quickstart & guides:  
+  - `docs/QUICKSTART.md`  
+  - `docs/XAMPP_SETUP.md`  
+  - `docs/MYSQL_SETUP.md`  
+  - `docs/MYSQL_PRODUCTION_SETUP.md`  
+  - `docs/OFFLINE_SETUP.md`  
+  - `docs/ADMIN_MANUAL.md`
+
+---
+
+## 📞 Getting Help
+
+1. Check log files in `logs/`
+2. View API docs: `/api/docs`
+3. See all documentation in `/docs/` and `PROJECT_DOCUMENTATION.md`
+4. Still stuck? Open an issue or ask your local admin
+
+---
+
+## 📄 License
+
+Provided as-is for educational use only.
+
+---
+
+## 🎯 2025 Roadmap
+
+- [ ] Email notifications (when online)
+- [ ] File attachments in comments
+- [ ] Advanced reporting/charts
+- [ ] Mobile app
+- [ ] Multi-language
+- [ ] Encrypted backup/restore
+- [ ] LAN/local sync for distributed usage
+
+---
+
+**Built with FastAPI, SQLAlchemy, and vanilla JS**  
+**Version 1.1.0  | Dec 2025**

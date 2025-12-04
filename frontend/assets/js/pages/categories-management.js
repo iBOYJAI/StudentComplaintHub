@@ -59,7 +59,7 @@ export class CategoriesManagementPage extends BasePage {
                 <td>#${cat.id}</td>
                 <td><strong>${this.escapeHtml(cat.name)}</strong></td>
                 <td>${this.escapeHtml(cat.description || 'N/A')}</td>
-                <td><span class="badge badge-${cat.active ? 'success' : 'gray'}">${cat.active ? 'Active' : 'Inactive'}</span></td>
+                <td><span class="badge badge-${cat.is_active ? 'success' : 'gray'}">${cat.is_active ? 'Active' : 'Inactive'}</span></td>
                 <td>
                   <div class="table-actions">
                     <button class="btn btn-sm btn-secondary" data-id="${cat.id}" data-action="edit">Edit</button>
@@ -77,7 +77,7 @@ export class CategoriesManagementPage extends BasePage {
   async loadData() {
     try {
       const response = await this.api.getCategories();
-      this.categories = response.data || response.categories || [];
+      this.categories = Array.isArray(response) ? response : (response.items || response.data || response.categories || []);
     } catch (error) {
       console.error('Error loading categories:', error);
       Toast.error('Failed to load categories');

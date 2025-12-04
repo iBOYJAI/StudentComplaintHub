@@ -83,12 +83,12 @@ export class AuditLogPage extends BasePage {
           <tbody>
             ${this.logs.map(log => `
               <tr>
-                <td>${this.formatDateTime(log.timestamp)}</td>
-                <td>${this.escapeHtml(log.username || log.user || 'System')}</td>
+                <td>${this.formatDateTime(log.created_at)}</td>
+                <td>${this.escapeHtml(log.user?.username || log.user?.full_name || 'System')}</td>
                 <td><span class="badge badge-${this.getActionColor(log.action)}">${log.action}</span></td>
-                <td>${this.escapeHtml(log.resource || 'N/A')}</td>
+                <td>${this.escapeHtml(log.resource_type || 'N/A')}</td>
                 <td>${this.escapeHtml(log.details || 'N/A')}</td>
-                <td>${this.escapeHtml(log.ipAddress || 'N/A')}</td>
+                <td>${this.escapeHtml(log.ip_address || 'N/A')}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -106,7 +106,7 @@ export class AuditLogPage extends BasePage {
       if (this.filters.dateTo) params.dateTo = this.filters.dateTo;
 
       const response = await this.api.getAuditLog(params);
-      this.logs = response.data || response.logs || [];
+      this.logs = response.items || response.data || response.logs || [];
     } catch (error) {
       console.error('Error loading audit logs:', error);
       Toast.error('Failed to load audit logs');

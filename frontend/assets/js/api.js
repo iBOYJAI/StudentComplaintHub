@@ -15,27 +15,67 @@ export class API {
     };
 
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      // Trim token to ensure no whitespace issues
+      const cleanToken = token.trim();
+      headers['Authorization'] = `Bearer ${cleanToken}`;
+      // Debug: log token (first 20 chars only for security)
+      console.log('Sending token:', cleanToken.substring(0, 20) + '...');
+    } else {
+      console.warn('No token found in localStorage');
     }
 
-    const config = {
+    const fetchOptions = {
       ...options,
       headers,
     };
 
     try {
-      const response = await fetch(url, config);
-      const data = await response.json();
+      const response = await fetch(url, fetchOptions);
+      
+      // Handle empty responses
+      let data;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        data = text ? JSON.parse(text) : {};
+      }
 
       if (!response.ok) {
         // Check for both 'error' and 'message' fields in the response
         const errorMessage = data.error || data.message || `Request failed with status ${response.status}`;
+        
+        // If token is invalid (422), clear it and redirect to login
+        const errorLower = errorMessage.toLowerCase();
+        if (response.status === 422 && (
+          errorLower.includes('token') || 
+          errorLower.includes('invalid') ||
+          errorLower.includes('subject must be a string')
+        )) {
+          console.warn('Invalid token detected, clearing and redirecting to login');
+          if (window.Auth) {
+            window.Auth.logout();
+          }
+          // Only redirect if not already on a public page
+          const publicPaths = ['/login', '/pin-login', '/register'];
+          if (!publicPaths.includes(window.location.pathname)) {
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 100);
+          }
+        }
+        
         throw new Error(errorMessage);
       }
 
       return data;
     } catch (error) {
       console.error('API Error:', error);
+      // Re-throw with more context if it's a network error
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        throw new Error('Network error: Unable to connect to server');
+      }
       throw error;
     }
   }
@@ -106,16 +146,23 @@ export class API {
     });
   }
 
-  async escalateComplaint(id) {
+  async escalateComplaint(id, reason = 'Escalated by user', escalatedTo = null, level = 1) {
     return this.request(`/complaints/${id}/escalate`, {
       method: 'POST',
+      body: JSON.stringify({ 
+        reason: reason,
+        escalated_to: escalatedTo,
+        level: level
+      }),
     });
   }
 
   async addComment(complaintId, comment) {
+    // Accept either a string or an object
+    const content = typeof comment === 'string' ? comment : comment.content;
     return this.request(`/complaints/${complaintId}/comments`, {
       method: 'POST',
-      body: JSON.stringify({ comment }),
+      body: JSON.stringify({ content: content }),
     });
   }
 

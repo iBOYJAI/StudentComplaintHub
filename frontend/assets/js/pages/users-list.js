@@ -81,11 +81,11 @@ export class UsersListPage extends BasePage {
             ${this.users.map(user => `
               <tr>
                 <td>#${user.id}</td>
-                <td>${this.escapeHtml(user.name || user.username)}</td>
+                <td>${this.escapeHtml(user.full_name || user.username)}</td>
                 <td>${this.escapeHtml(user.email)}</td>
-                <td><span class="badge badge-${this.getRoleBadgeColor(user.role)}">${user.role}</span></td>
-                <td><span class="badge badge-${user.active ? 'success' : 'gray'}">${user.active ? 'Active' : 'Inactive'}</span></td>
-                <td>${this.formatDate(user.createdAt)}</td>
+                <td><span class="badge badge-${this.getRoleBadgeColor(user.roles?.[0] || 'student')}">${user.roles?.[0] || 'Student'}</span></td>
+                <td><span class="badge badge-${user.is_active ? 'success' : 'gray'}">${user.is_active ? 'Active' : 'Inactive'}</span></td>
+                <td>${this.formatDate(user.created_at)}</td>
                 <td>
                   <div class="table-actions">
                     <a href="/admin/users/${user.id}" class="btn btn-sm btn-primary" data-link>View</a>
@@ -108,7 +108,7 @@ export class UsersListPage extends BasePage {
       if (this.filters.search) params.search = this.filters.search;
 
       const response = await this.api.getUsers(params);
-      this.users = response.data || response.users || [];
+      this.users = Array.isArray(response) ? response : (response.items || response.data || response.users || []);
     } catch (error) {
       console.error('Error loading users:', error);
       Toast.error('Failed to load users');

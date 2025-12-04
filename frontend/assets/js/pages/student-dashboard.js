@@ -5,13 +5,22 @@ export class StudentDashboardPage extends BasePage {
   async getContent() {
     try {
       const stats = await this.api.getDashboardStats();
-      const recentComplaints = await this.api.getComplaints({ limit: 5 });
+      const complaintsResponse = await this.api.getComplaints({ per_page: 5 });
+      
+      // API returns { items: [], total: ..., page: ..., per_page: ..., total_pages: ... }
+      // Extract the items array from the response
+      const recentComplaints = Array.isArray(complaintsResponse) 
+        ? complaintsResponse 
+        : (complaintsResponse.items || complaintsResponse.data || []);
+
+      const user = this.store.getUser();
+      const userName = user?.full_name || user?.name || user?.username || 'Student';
 
       return `
         <div class="main-content">
           <div class="dashboard-header">
             <div>
-              <h1 class="dashboard-welcome">Welcome back, ${this.store.getUser()?.name || 'Student'}!</h1>
+              <h1 class="dashboard-welcome">Welcome back, ${this.escapeHtml(userName)}!</h1>
               <p class="dashboard-subtitle">Here's your complaint overview</p>
             </div>
             <div class="quick-actions">
@@ -61,9 +70,9 @@ export class StudentDashboardPage extends BasePage {
               ${recentComplaints.length > 0 ? recentComplaints.map(c => `
                 <a href="/student/complaints/${c.id}" class="complaint-card-mini" data-link>
                   <div class="complaint-card-mini-content">
-                    <div class="complaint-card-mini-title">${c.title}</div>
+                    <div class="complaint-card-mini-title">${this.escapeHtml(c.title || 'Untitled')}</div>
                     <div class="complaint-card-mini-meta">
-                      <span>${helpers.getStatusBadge(c.status)}</span>
+                      <span>${helpers.getStatusBadge(c.status || 'New')}</span>
                       <span>${helpers.formatTimeAgo(c.created_at)}</span>
                     </div>
                   </div>
@@ -74,6 +83,7 @@ export class StudentDashboardPage extends BasePage {
         </div>
       `;
     } catch (error) {
+      console.error('Error loading dashboard:', error);
       return this.getErrorContent(error.message);
     }
   }

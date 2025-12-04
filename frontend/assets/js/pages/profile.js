@@ -70,10 +70,6 @@ export class ProfilePage extends BasePage {
                 <label class="form-label">Full Name</label>
                 <input type="text" class="form-control" id="name" value="${this.user.name || ''}" disabled>
               </div>
-              <div class="form-group">
-                <label class="form-label">Role</label>
-                <input type="text" class="form-control" value="${this.user.role}" disabled>
-              </div>
               <div id="formActions" class="crud-form-actions" style="display: none;">
                 <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
                 <button type="submit" class="btn btn-primary">Save Changes</button>
@@ -199,31 +195,67 @@ export class ProfilePage extends BasePage {
   }
 
   async changePassword() {
-    const currentPassword = document.getElementById('currentPassword').value;
-    const newPassword = document.getElementById('newPassword').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
+    const currentPasswordEl = document.getElementById('currentPassword');
+    const newPasswordEl = document.getElementById('newPassword');
+    const confirmPasswordEl = document.getElementById('confirmPassword');
+    const passwordForm = document.getElementById('passwordForm');
 
-    if (newPassword !== confirmPassword) {
-      Toast.error('New passwords do not match');
+    if (!currentPasswordEl || !newPasswordEl || !confirmPasswordEl) {
+      Toast.error('Password form fields not found');
       return;
     }
 
-    if (newPassword.length < 8) {
-      Toast.error('Password must be at least 8 characters');
+    const currentPassword = currentPasswordEl.value.trim();
+    const newPassword = newPasswordEl.value.trim();
+    const confirmPassword = confirmPasswordEl.value.trim();
+
+    // Validate current password
+    if (!currentPassword) {
+      Toast.error('Current password is required');
+      currentPasswordEl.focus();
+      return;
+    }
+
+    // Validate new password
+    if (!newPassword) {
+      Toast.error('New password is required');
+      newPasswordEl.focus();
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      Toast.error('Password must be at least 6 characters');
+      newPasswordEl.focus();
+      return;
+    }
+
+    // Validate confirm password
+    if (!confirmPassword) {
+      Toast.error('Please confirm your new password');
+      confirmPasswordEl.focus();
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      Toast.error('New passwords do not match');
+      confirmPasswordEl.focus();
       return;
     }
 
     try {
       await this.api.changePassword({
-        currentPassword,
-        newPassword
+        current_password: currentPassword,
+        new_password: newPassword
       });
 
       Toast.success('Password changed successfully');
-      document.getElementById('passwordForm').reset();
+      if (passwordForm) {
+        passwordForm.reset();
+      }
     } catch (error) {
       console.error('Error changing password:', error);
-      Toast.error('Failed to change password');
+      const errorMessage = error.message || 'Failed to change password';
+      Toast.error(errorMessage);
     }
   }
 

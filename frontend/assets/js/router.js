@@ -24,6 +24,7 @@ import { NotificationsPage } from './pages/notifications.js';
 import { ProfilePage } from './pages/profile.js';
 import { AuditLogPage } from './pages/audit-log.js';
 import { BackupRestorePage } from './pages/backup-restore.js';
+import { AdminComplaintsPage } from './pages/admin-complaints.js';
 import { NotFoundPage } from './pages/not-found.js';
 
 export class Router {
@@ -55,6 +56,8 @@ export class Router {
     
     // Admin routes
     this.addRoute('/admin/dashboard', AdminDashboardPage, { requireAuth: true, role: 'admin' });
+    this.addRoute('/admin/complaints', AdminComplaintsPage, { requireAuth: true, role: 'admin' });
+    this.addRoute('/admin/complaints/:id', StaffComplaintDetailPage, { requireAuth: true, role: 'admin' });
     this.addRoute('/admin/users', UsersListPage, { requireAuth: true, role: 'admin' });
     this.addRoute('/admin/users/:id', UserDetailPage, { requireAuth: true, role: 'admin' });
     this.addRoute('/admin/roles', RolesManagementPage, { requireAuth: true, role: 'admin' });

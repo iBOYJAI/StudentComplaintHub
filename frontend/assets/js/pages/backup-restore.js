@@ -61,7 +61,7 @@ export class BackupRestorePage extends BasePage {
             ${this.backups.map(backup => `
               <tr>
                 <td><strong>${this.escapeHtml(backup.filename)}</strong></td>
-                <td>${this.formatDateTime(backup.createdAt)}</td>
+                <td>${this.formatDateTime(backup.created_at)}</td>
                 <td>${this.formatSize(backup.size)}</td>
                 <td><span class="badge badge-${backup.type === 'manual' ? 'primary' : 'info'}">${backup.type}</span></td>
                 <td>
@@ -81,7 +81,7 @@ export class BackupRestorePage extends BasePage {
   async loadData() {
     try {
       const response = await this.api.getBackups();
-      this.backups = response.data || response.backups || [];
+      this.backups = response.backups || response.data || [];
     } catch (error) {
       console.error('Error loading backups:', error);
       Toast.error('Failed to load backups');

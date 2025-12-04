@@ -61,9 +61,9 @@ export class SLARulesPage extends BasePage {
                 <td>#${rule.id}</td>
                 <td><strong>${this.escapeHtml(rule.name)}</strong></td>
                 <td><span class="badge badge-${this.getPriorityColor(rule.priority)}">${rule.priority || 'N/A'}</span></td>
-                <td>${rule.responseTime || 'N/A'} hours</td>
-                <td>${rule.resolutionTime || 'N/A'} hours</td>
-                <td><span class="badge badge-${rule.active ? 'success' : 'gray'}">${rule.active ? 'Active' : 'Inactive'}</span></td>
+                <td>${rule.response_time_minutes ? Math.round(rule.response_time_minutes / 60) : 'N/A'} hours</td>
+                <td>${rule.resolution_time_minutes ? Math.round(rule.resolution_time_minutes / 60) : 'N/A'} hours</td>
+                <td><span class="badge badge-${rule.is_active ? 'success' : 'gray'}">${rule.is_active ? 'Active' : 'Inactive'}</span></td>
                 <td>
                   <div class="table-actions">
                     <button class="btn btn-sm btn-secondary" data-id="${rule.id}" data-action="edit">Edit</button>
@@ -81,7 +81,7 @@ export class SLARulesPage extends BasePage {
   async loadData() {
     try {
       const response = await this.api.getSLARules();
-      this.rules = response.data || response.rules || [];
+      this.rules = Array.isArray(response) ? response : (response.items || response.data || response.rules || []);
     } catch (error) {
       console.error('Error loading SLA rules:', error);
       Toast.error('Failed to load SLA rules');

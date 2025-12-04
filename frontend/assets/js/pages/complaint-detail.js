@@ -3,6 +3,13 @@ import { helpers } from '../utils/helpers.js';
 import { Toast } from '../components/toast.js';
 
 export class ComplaintDetailPage extends BasePage {
+  escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
   async getContent() {
     try {
       const complaint = await this.api.getComplaint(this.params.id);
@@ -29,11 +36,19 @@ export class ComplaintDetailPage extends BasePage {
                 </div>
                 <div class="complaint-detail-meta-item">
                   <span class="complaint-detail-meta-label">Category</span>
-                  <span class="complaint-detail-meta-value">${complaint.category?.name || '-'}</span>
+                  <span class="complaint-detail-meta-value">${complaint.category_name || '-'}</span>
                 </div>
                 <div class="complaint-detail-meta-item">
                   <span class="complaint-detail-meta-label">Location</span>
-                  <span class="complaint-detail-meta-value">${complaint.location?.name || '-'}</span>
+                  <span class="complaint-detail-meta-value">${complaint.location_name || '-'}</span>
+                </div>
+                <div class="complaint-detail-meta-item">
+                  <span class="complaint-detail-meta-label">Views</span>
+                  <span class="complaint-detail-meta-value">👁️ ${complaint.view_count || 0}</span>
+                </div>
+                <div class="complaint-detail-meta-item">
+                  <span class="complaint-detail-meta-label">Votes</span>
+                  <span class="complaint-detail-meta-value">👍 ${complaint.votes?.count || complaint.vote_count || 0}</span>
                 </div>
                 <div class="complaint-detail-meta-item">
                   <span class="complaint-detail-meta-label">Created</span>
@@ -45,15 +60,16 @@ export class ComplaintDetailPage extends BasePage {
             <div class="complaint-detail-body">
               <div class="complaint-detail-main">
                 <div class="comments-section">
-                  <h3 class="card-title">Comments & Updates</h3>
+                  <h3 class="card-title">Comments & Updates (${(complaint.comments || []).length})</h3>
                   <div class="comments-list">
                     ${(complaint.comments || []).length > 0 ? complaint.comments.map(c => `
                       <div class="comment-item">
                         <div class="comment-header">
-                          <span class="comment-author">${c.user?.name || 'Anonymous'}</span>
+                          <span class="comment-author">${this.escapeHtml(c.author_name || 'Anonymous')}</span>
                           <span class="comment-time">${helpers.formatTimeAgo(c.created_at)}</span>
                         </div>
-                        <div class="comment-body">${c.comment}</div>
+                        <div class="comment-body">${this.escapeHtml(c.content)}</div>
+                        ${c.parent_id ? '<div class="comment-reply-indicator">↳ Reply</div>' : ''}
                       </div>
                     `).join('') : '<p class="text-muted">No comments yet</p>'}
                   </div>
@@ -70,13 +86,23 @@ export class ComplaintDetailPage extends BasePage {
               <div class="complaint-detail-sidebar">
                 <div class="complaint-actions-card">
                   <h4 class="card-title">Actions</h4>
-                  <button class="btn btn-primary complaint-action-btn" id="voteBtn">
-                    👍 Vote (${complaint.votes || 0})
+                  <button class="btn btn-primary complaint-action-btn" id="voteBtn" data-voted="${complaint.user_has_voted || false}">
+                    ${complaint.user_has_voted ? '👍 Voted' : '👍 Vote'} (${complaint.votes?.count || complaint.vote_count || 0})
                   </button>
                   <button class="btn btn-warning complaint-action-btn" id="escalateBtn">
                     ⚠️ Escalate
                   </button>
                 </div>
+                ${complaint.votes?.voters && complaint.votes.voters.length > 0 ? `
+                <div class="complaint-voters-card mt-4">
+                  <h4 class="card-title">Voters (${complaint.votes.voters.length})</h4>
+                  <div class="voters-list">
+                    ${complaint.votes.voters.map(v => `
+                      <div class="voter-item">${this.escapeHtml(v.username || 'Unknown')}</div>
+                    `).join('')}
+                  </div>
+                </div>
+                ` : ''}
               </div>
             </div>
           </div>
@@ -90,29 +116,52 @@ export class ComplaintDetailPage extends BasePage {
   async afterRender() {
     document.getElementById('commentForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const comment = new FormData(e.target).get('comment');
+      const formData = new FormData(e.target);
+      const comment = formData.get('comment')?.trim();
+      
+      if (!comment) {
+        Toast.error('Comment cannot be empty');
+        return;
+      }
+      
       try {
         await this.api.addComment(this.params.id, comment);
         Toast.success('Comment added!');
-        this.render();
+        e.target.reset(); // Clear the form
+        this.render(); // Re-render to show the new comment
       } catch (error) {
-        Toast.error(error.message);
+        Toast.error(error.message || 'Failed to add comment');
       }
     });
 
-    document.getElementById('voteBtn')?.addEventListener('click', async () => {
+    const voteBtn = document.getElementById('voteBtn');
+    voteBtn?.addEventListener('click', async () => {
       try {
-        await this.api.voteComplaint(this.params.id);
-        Toast.success('Voted!');
-        this.render();
+        const response = await this.api.voteComplaint(this.params.id);
+        Toast.success(response.voted ? 'Voted!' : 'Vote removed!');
+        
+        // Update button text immediately
+        if (voteBtn) {
+          voteBtn.textContent = `${response.voted ? '👍 Voted' : '👍 Vote'} (${response.vote_count || 0})`;
+          voteBtn.dataset.voted = response.voted;
+        }
+        
+        // Re-render to update all data
+        await this.render();
       } catch (error) {
-        Toast.error(error.message);
+        Toast.error(error.message || 'Failed to vote');
       }
     });
 
     document.getElementById('escalateBtn')?.addEventListener('click', async () => {
+      const reason = prompt('Please provide a reason for escalation:');
+      if (!reason || !reason.trim()) {
+        Toast.error('Escalation reason is required');
+        return;
+      }
+      
       try {
-        await this.api.escalateComplaint(this.params.id);
+        await this.api.escalateComplaint(this.params.id, reason.trim());
         Toast.success('Complaint escalated!');
         this.render();
       } catch (error) {

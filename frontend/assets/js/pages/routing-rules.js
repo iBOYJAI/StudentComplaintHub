@@ -65,7 +65,7 @@ export class RoutingRulesPage extends BasePage {
                 <td>${this.escapeHtml(rule.condition || 'N/A')}</td>
                 <td>${this.escapeHtml(rule.assignTo || 'N/A')}</td>
                 <td><span class="badge badge-${this.getPriorityColor(rule.priority)}">${rule.priority || 0}</span></td>
-                <td><span class="badge badge-${rule.active ? 'success' : 'gray'}">${rule.active ? 'Active' : 'Inactive'}</span></td>
+                <td><span class="badge badge-${rule.is_active ? 'success' : 'gray'}">${rule.is_active ? 'Active' : 'Inactive'}</span></td>
                 <td>
                   <div class="table-actions">
                     <button class="btn btn-sm btn-secondary" data-id="${rule.id}" data-action="edit">Edit</button>
@@ -88,9 +88,9 @@ export class RoutingRulesPage extends BasePage {
         this.api.getLocations()
       ]);
       
-      this.rules = rulesResponse.data || rulesResponse.rules || [];
-      this.categories = categoriesResponse.data || categoriesResponse.categories || [];
-      this.locations = locationsResponse.data || locationsResponse.locations || [];
+      this.rules = Array.isArray(rulesResponse) ? rulesResponse : (rulesResponse.items || rulesResponse.data || rulesResponse.rules || []);
+      this.categories = Array.isArray(categoriesResponse) ? categoriesResponse : (categoriesResponse.items || categoriesResponse.data || categoriesResponse.categories || []);
+      this.locations = Array.isArray(locationsResponse) ? locationsResponse : (locationsResponse.items || locationsResponse.data || locationsResponse.locations || []);
     } catch (error) {
       console.error('Error loading data:', error);
       Toast.error('Failed to load routing rules');

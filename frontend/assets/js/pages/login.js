@@ -55,12 +55,38 @@ export class LoginPage extends BasePage {
 
       const response = await this.api.login(credentials);
       
-      Auth.setToken(response.access_token);
-      Auth.setUser(response.user);
-      this.store.setUser(response.user);
+      // Store token and user data immediately
+      if (response.access_token) {
+        Auth.setToken(response.access_token);
+      }
+      if (response.user) {
+        Auth.setUser(response.user);
+      }
+      
+      // Update store with user data
+      if (window.store) {
+        window.store.setUser(response.user);
+      }
       
       Toast.success('Login successful!');
-      Auth.redirectToDashboard();
+      
+      // Use router navigation instead of window.location to avoid full page reload
+      // This preserves the token and user data
+      const role = Auth.getUserRole();
+      const dashboards = {
+        student: '/student/dashboard',
+        staff: '/staff/dashboard',
+        admin: '/admin/dashboard',
+      };
+      
+      const dashboardPath = dashboards[role] || '/';
+      
+      // Use router if available, otherwise use window.location
+      if (window.router) {
+        window.router.navigate(dashboardPath);
+      } else {
+        window.location.href = dashboardPath;
+      }
     } catch (error) {
       Toast.error(error.message || 'Login failed');
     }

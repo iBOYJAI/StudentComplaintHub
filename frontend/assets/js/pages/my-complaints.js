@@ -5,8 +5,10 @@ import { helpers } from '../utils/helpers.js';
 export class MyComplaintsPage extends BasePage {
   async getContent() {
     try {
-      const complaints = await this.api.getComplaints();
-
+      const response = await this.api.getComplaints();
+      // API returns { items: [], total: ..., page: ..., per_page: ..., total_pages: ... }
+      const complaints = Array.isArray(response) ? response : (response.items || response.data || []);
+      
       const table = new Table({
         columns: [
           { label: 'ID', field: 'id' },
@@ -43,25 +45,41 @@ export class MyComplaintsPage extends BasePage {
 
   async afterRender() {
     const container = document.getElementById('complaintsTable');
-    const complaints = await this.api.getComplaints();
-    const table = new Table({
-      columns: [
-        { label: 'ID', field: 'id' },
-        { label: 'Title', field: 'title' },
-        { label: 'Status', field: 'status', format: (val) => helpers.getStatusBadge(val) },
-        { label: 'Priority', field: 'priority', format: (val) => helpers.getPriorityBadge(val) },
-        { label: 'Created', field: 'created_at', format: (val) => helpers.formatDate(val) }
-      ],
-      data: complaints,
-      actions: [
-        {
-          name: 'view',
-          label: 'View',
-          class: 'btn-primary',
-          onClick: (row) => this.router.navigate(`/student/complaints/${row.id}`)
-        }
-      ]
-    });
-    table.attachEvents(container);
+    if (!container) {
+      console.warn('MyComplaintsPage.afterRender: complaintsTable container not found');
+      return;
+    }
+
+    // Attach events to the table that was already rendered in getContent
+    try {
+      const tableElement = container.querySelector('.table-container');
+      if (tableElement) {
+        // Create a temporary table instance to attach events
+        const response = await this.api.getComplaints();
+        const complaints = Array.isArray(response) ? response : (response.items || response.data || []);
+        
+        const table = new Table({
+          columns: [
+            { label: 'ID', field: 'id' },
+            { label: 'Title', field: 'title' },
+            { label: 'Status', field: 'status', format: (val) => helpers.getStatusBadge(val) },
+            { label: 'Priority', field: 'priority', format: (val) => helpers.getPriorityBadge(val) },
+            { label: 'Created', field: 'created_at', format: (val) => helpers.formatDate(val) }
+          ],
+          data: complaints,
+          actions: [
+            {
+              name: 'view',
+              label: 'View',
+              class: 'btn-primary',
+              onClick: (row) => this.router.navigate(`/student/complaints/${row.id}`)
+            }
+          ]
+        });
+        table.attachEvents(container);
+      }
+    } catch (error) {
+      console.error('Error attaching table events:', error);
+    }
   }
 }

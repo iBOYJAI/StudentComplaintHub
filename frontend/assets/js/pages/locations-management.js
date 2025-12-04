@@ -59,7 +59,7 @@ export class LocationsManagementPage extends BasePage {
                 <td>#${loc.id}</td>
                 <td><strong>${this.escapeHtml(loc.name)}</strong></td>
                 <td>${this.escapeHtml(loc.description || 'N/A')}</td>
-                <td><span class="badge badge-${loc.active ? 'success' : 'gray'}">${loc.active ? 'Active' : 'Inactive'}</span></td>
+                <td><span class="badge badge-${loc.is_active ? 'success' : 'gray'}">${loc.is_active ? 'Active' : 'Inactive'}</span></td>
                 <td>
                   <div class="table-actions">
                     <button class="btn btn-sm btn-secondary" data-id="${loc.id}" data-action="edit">Edit</button>
@@ -77,7 +77,7 @@ export class LocationsManagementPage extends BasePage {
   async loadData() {
     try {
       const response = await this.api.getLocations();
-      this.locations = response.data || response.locations || [];
+      this.locations = Array.isArray(response) ? response : (response.items || response.data || response.locations || []);
     } catch (error) {
       console.error('Error loading locations:', error);
       Toast.error('Failed to load locations');

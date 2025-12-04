@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
+from datetime import datetime
 from ..extensions import db
 from ..models import Category, Location, User, Role, RoutingRule, SLARule
 from ..utils.decorators import admin_required
@@ -184,3 +185,159 @@ def update_sla_rule(id):
     
     db.session.commit()
     return jsonify(rule.to_dict()), 200
+
+@admin_bp.route('/sla-rules/<int:id>', methods=['DELETE'])
+@jwt_required()
+@admin_required
+def delete_sla_rule(id):
+    rule = SLARule.query.get(id)
+    if not rule:
+        return jsonify({'error': 'SLA rule not found'}), 404
+    
+    db.session.delete(rule)
+    db.session.commit()
+    return jsonify({'message': 'SLA rule deleted'}), 200
+
+@admin_bp.route('/categories/<int:id>', methods=['PUT'])
+@jwt_required()
+@admin_required
+def update_category(id):
+    category = Category.query.get(id)
+    if not category:
+        return jsonify({'error': 'Category not found'}), 404
+    
+    data = request.get_json()
+    if 'name' in data:
+        category.name = data['name']
+    if 'description' in data:
+        category.description = data.get('description')
+    if 'is_active' in data:
+        category.is_active = data['is_active']
+    
+    db.session.commit()
+    return jsonify(category.to_dict()), 200
+
+@admin_bp.route('/categories/<int:id>', methods=['DELETE'])
+@jwt_required()
+@admin_required
+def delete_category(id):
+    category = Category.query.get(id)
+    if not category:
+        return jsonify({'error': 'Category not found'}), 404
+    
+    category.is_active = False
+    db.session.commit()
+    return jsonify({'message': 'Category deleted'}), 200
+
+@admin_bp.route('/locations/<int:id>', methods=['PUT'])
+@jwt_required()
+@admin_required
+def update_location(id):
+    location = Location.query.get(id)
+    if not location:
+        return jsonify({'error': 'Location not found'}), 404
+    
+    data = request.get_json()
+    if 'name' in data:
+        location.name = data['name']
+    if 'description' in data:
+        location.description = data.get('description')
+    if 'is_active' in data:
+        location.is_active = data['is_active']
+    
+    db.session.commit()
+    return jsonify(location.to_dict()), 200
+
+@admin_bp.route('/locations/<int:id>', methods=['DELETE'])
+@jwt_required()
+@admin_required
+def delete_location(id):
+    location = Location.query.get(id)
+    if not location:
+        return jsonify({'error': 'Location not found'}), 404
+    
+    location.is_active = False
+    db.session.commit()
+    return jsonify({'message': 'Location deleted'}), 200
+
+@admin_bp.route('/backups', methods=['GET'])
+@jwt_required()
+@admin_required
+def list_backups():
+    """List available backups"""
+    import os
+    backup_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'backups')
+    
+    backups = []
+    if os.path.exists(backup_dir):
+        for filename in os.listdir(backup_dir):
+            if filename.endswith('.db'):
+                filepath = os.path.join(backup_dir, filename)
+                stat = os.stat(filepath)
+                backups.append({
+                    'filename': filename,
+                    'size': stat.st_size,
+                    'created_at': datetime.fromtimestamp(stat.st_mtime).isoformat()
+                })
+    
+    return jsonify({'backups': backups}), 200
+
+@admin_bp.route('/backup', methods=['POST'])
+@jwt_required()
+@admin_required
+def create_backup():
+    """Create a database backup"""
+    import os
+    import shutil
+    from datetime import datetime
+    
+    backup_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'backups')
+    os.makedirs(backup_dir, exist_ok=True)
+    
+    db_path = db.engine.url.database
+    if db_path and os.path.exists(db_path):
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_filename = f'backup_{timestamp}.db'
+        backup_path = os.path.join(backup_dir, backup_filename)
+        
+        shutil.copy2(db_path, backup_path)
+        
+        return jsonify({
+            'message': 'Backup created successfully',
+            'filename': backup_filename
+        }), 200
+    else:
+        return jsonify({'error': 'Database file not found'}), 404
+
+@admin_bp.route('/restore', methods=['POST'])
+@jwt_required()
+@admin_required
+def restore_backup():
+    """Restore from a backup"""
+    import os
+    import shutil
+    
+    data = request.get_json() or {}
+    filename = data.get('filename')
+    
+    if not filename:
+        return jsonify({'error': 'Filename is required'}), 400
+    
+    backup_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'backups')
+    backup_path = os.path.join(backup_dir, filename)
+    
+    if not os.path.exists(backup_path):
+        return jsonify({'error': 'Backup file not found'}), 404
+    
+    db_path = db.engine.url.database
+    if db_path:
+        # Create a safety backup before restoring
+        safety_backup = f'{db_path}.safety_backup'
+        if os.path.exists(db_path):
+            shutil.copy2(db_path, safety_backup)
+        
+        shutil.copy2(backup_path, db_path)
+        
+        return jsonify({'message': 'Database restored successfully'}), 200
+    else:
+        return jsonify({'error': 'Database file not found'}), 404

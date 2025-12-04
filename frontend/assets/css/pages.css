@@ -412,6 +412,80 @@
   color: var(--color-text-secondary);
 }
 
+.chart-container {
+  min-height: 200px;
+  padding: var(--spacing-4);
+}
+
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.bar-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+}
+
+.bar-label {
+  min-width: 120px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  text-align: right;
+}
+
+.bar-wrapper {
+  flex: 1;
+  height: 30px;
+  background-color: var(--color-border);
+  border-radius: var(--radius-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.bar {
+  height: 100%;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: var(--spacing-2);
+  transition: width 0.3s ease;
+  min-width: 40px;
+}
+
+.bar-value {
+  color: white;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.response-time-display {
+  text-align: center;
+  padding: var(--spacing-8);
+}
+
+.response-time-value {
+  font-size: var(--font-size-5xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-2);
+}
+
+.response-time-label {
+  font-size: var(--font-size-lg);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-4);
+}
+
+.response-time-description {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
 /* ==================== PROFILE PAGE ==================== */
 .profile-container {
   max-width: 900px;

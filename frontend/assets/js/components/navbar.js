@@ -4,10 +4,17 @@ export class Navbar {
   }
 
   render(user = null) {
-    const navItems = user ? this.getNavItems(user.role) : [];
+    // Get role from Auth helper if user.role doesn't exist
+    const role = user ? (user.role || (window.Auth ? window.Auth.getUserRole() : null)) : null;
+    const navItems = role ? this.getNavItems(role) : [];
 
     return `
       <nav class="navbar">
+        ${user ? `
+          <button class="btn btn-ghost sidebar-toggle-navbar" id="sidebarToggleNavbar" aria-label="Toggle sidebar" style="margin-right: var(--spacing-2);">
+            <span style="font-size: 1.25rem;">☰</span>
+          </button>
+        ` : ''}
         <a href="/" class="navbar-brand" data-link>
           <svg width="32" height="32" viewBox="0 0 32 32" fill="currentColor">
             <rect width="32" height="32" rx="6" fill="currentColor"/>
@@ -80,6 +87,16 @@ export class Navbar {
   }
 
   attachEvents() {
+    // Sidebar toggle in navbar (for mobile/desktop)
+    const sidebarToggleNavbar = document.getElementById('sidebarToggleNavbar');
+    if (sidebarToggleNavbar && window.app && window.app.sidebar) {
+      sidebarToggleNavbar.addEventListener('click', () => {
+        if (window.app.sidebar) {
+          window.app.sidebar.toggle();
+        }
+      });
+    }
+    
     // Dropdown toggle
     const dropdownToggle = document.getElementById('userDropdown');
     const dropdownMenu = document.getElementById('userDropdownMenu');

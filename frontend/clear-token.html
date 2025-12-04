@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Token - Student Complaint Hub</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .success {
+            color: green;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Clear Invalid Token</h1>
+    <p>If you're experiencing authentication errors, click the button below to clear your stored token and user data.</p>
+    <button onclick="clearToken()">Clear Token & Redirect to Login</button>
+    <div id="message"></div>
+
+    <script>
+        function clearToken() {
+            // Clear all auth-related data
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            
+            // Show success message
+            document.getElementById('message').innerHTML = 
+                '<p class="success">Token cleared! Redirecting to login...</p>';
+            
+            // Redirect to login after a short delay
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 1000);
+        }
+
+        // Auto-clear on page load if requested
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('auto') === 'true') {
+            clearToken();
+        }
+    </script>
+</body>
+</html>
+

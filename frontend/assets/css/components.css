@@ -636,6 +636,17 @@ select.form-control {
   padding: 0 var(--spacing-6);
   z-index: var(--z-fixed);
   box-shadow: var(--shadow-sm);
+  transition: left var(--transition-base);
+}
+
+.sidebar-toggle-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  margin-right: var(--spacing-2);
+  font-size: 1.25rem;
 }
 
 .navbar-brand {
@@ -683,13 +694,57 @@ select.form-control {
   background-color: var(--color-surface);
   border-right: 1px solid var(--color-border);
   overflow-y: auto;
-  z-index: var(--z-sticky);
+  z-index: 1025; /* Above sticky but below navbar (1030) */
   transition: transform var(--transition-base);
 }
 
 .sidebar-header {
-  padding: var(--spacing-6);
+  padding: var(--spacing-4) var(--spacing-6);
   border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  position: sticky;
+  top: 0;
+  background-color: var(--color-surface);
+  z-index: 1;
+  min-height: 60px;
+}
+
+.sidebar-header h3 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  flex: 1;
+  text-align: left;
+}
+
+.sidebar-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+  z-index: 2;
+  min-width: 36px;
+  min-height: 36px;
+  font-size: var(--font-size-xl);
+}
+
+.sidebar-toggle:hover {
+  background-color: var(--color-gray-100);
+}
+
+.sidebar-toggle-icon {
+  font-size: var(--font-size-lg);
+  line-height: 1;
 }
 
 .sidebar-menu {
@@ -725,14 +780,68 @@ select.form-control {
   flex-shrink: 0;
 }
 
+/* Desktop: Sidebar always visible, toggle visible for collapsing */
+@media (min-width: 1025px) {
+  .sidebar {
+    transform: translateX(0);
+  }
+  
+  .sidebar.collapsed {
+    transform: translateX(calc(-1 * var(--sidebar-width) + 60px)); /* Show only toggle button */
+    width: 60px;
+  }
+  
+  .sidebar.collapsed .sidebar-header h3,
+  .sidebar.collapsed .sidebar-menu {
+    display: none;
+  }
+  
+  .sidebar-toggle {
+    display: flex; /* Show toggle on desktop for collapsing */
+  }
+  
+  /* Adjust app padding when sidebar is collapsed */
+  #app.with-sidebar.sidebar-collapsed {
+    padding-left: 60px;
+  }
+}
+
 /* Mobile Sidebar */
 @media (max-width: 1024px) {
   .sidebar {
     transform: translateX(-100%);
+    z-index: 1040; /* Above navbar on mobile */
   }
   
   .sidebar.open {
     transform: translateX(0);
+  }
+  
+  .sidebar-toggle {
+    display: flex; /* Show toggle on mobile */
+  }
+}
+
+/* Sidebar toggle for mobile */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    z-index: 1040; /* Above navbar on mobile */
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  
+  .sidebar-toggle {
+    display: flex;
+  }
+}
+
+/* Desktop: sidebar always visible, toggle hidden */
+@media (min-width: 769px) {
+  .sidebar-toggle {
+    display: none;
   }
 }
 
